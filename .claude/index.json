@@ -1,0 +1,183 @@
+{
+  "timestamp": "2025-11-22T21:08:44+08:00",
+  "project": "沟通大师",
+  "scanning": {
+    "total_files": 17,
+    "scanned_files": 17,
+    "coverage_percentage": 100,
+    "ignored_files": 0,
+    "truncated": false
+  },
+  "modules": [
+    {
+      "path": "src",
+      "type": "source",
+      "files": 17,
+      "coverage": {
+        "scanned": 17,
+        "total": 17,
+        "percentage": 100
+      },
+      "submodules": [
+        {
+          "path": "src/pages",
+          "type": "pages",
+          "files": 5,
+          "coverage": {
+            "scanned": 5,
+            "total": 5,
+            "percentage": 100
+          },
+          "entry_points": ["Home.tsx", "AIPractice.tsx", "Assessment.tsx"],
+          "interfaces": ["Assessment", "Message", "Scenario", "Article", "ProgressData"],
+          "tests": false,
+          "gaps": []
+        },
+        {
+          "path": "src/components",
+          "type": "components",
+          "files": 6,
+          "coverage": {
+            "scanned": 6,
+            "total": 6,
+            "percentage": 100
+          },
+          "entry_points": ["Navbar.tsx", "HeroSection.tsx", "LoginModal.tsx"],
+          "interfaces": ["NavbarProps", "LoginModalProps", "NavLinkProps"],
+          "tests": false,
+          "gaps": []
+        },
+        {
+          "path": "src/contexts",
+          "type": "contexts",
+          "files": 1,
+          "coverage": {
+            "scanned": 1,
+            "total": 1,
+            "percentage": 100
+          },
+          "entry_points": ["authContext.ts"],
+          "interfaces": ["AuthContextType", "User"],
+          "tests": false,
+          "gaps": []
+        },
+        {
+          "path": "src/hooks",
+          "type": "hooks",
+          "files": 2,
+          "coverage": {
+            "scanned": 2,
+            "total": 2,
+            "percentage": 100
+          },
+          "entry_points": ["useAuth.ts", "useTheme.ts"],
+          "interfaces": ["AuthContextType", "ThemeState"],
+          "tests": false,
+          "gaps": []
+        },
+        {
+          "path": "src/lib",
+          "type": "lib",
+          "files": 2,
+          "coverage": {
+            "scanned": 2,
+            "total": 2,
+            "percentage": 100
+          },
+          "entry_points": ["supabase.ts", "utils.ts"],
+          "interfaces": ["User", "UserProfile", "AuthOperations"],
+          "tests": false,
+          "gaps": []
+        }
+      ]
+    }
+  ],
+  "coverage_summary": {
+    "overall_coverage": 100,
+    "modules_covered": 5,
+    "total_modules": 5,
+    "files_with_tests": 0,
+    "files_without_tests": 17,
+    "test_coverage_percentage": 0
+  },
+  "gaps": {
+    "missing_tests": [
+      "src/pages/Home.tsx",
+      "src/pages/AIPractice.tsx",
+      "src/pages/Assessment.tsx",
+      "src/pages/KnowledgeBase.tsx",
+      "src/pages/ProgressTracking.tsx",
+      "src/components/Navbar.tsx",
+      "src/components/HeroSection.tsx",
+      "src/components/FeaturesSection.tsx",
+      "src/components/LoginModal.tsx",
+      "src/components/SuccessStories.tsx",
+      "src/components/Empty.tsx",
+      "src/contexts/authContext.ts",
+      "src/hooks/useAuth.ts",
+      "src/hooks/useTheme.ts",
+      "src/lib/supabase.ts",
+      "src/lib/utils.ts"
+    ],
+    "missing_documentation": [],
+    "complex_components": [
+      {
+        "file": "src/pages/AIPractice.tsx",
+        "lines": 1302,
+        "reason": "组件过于复杂，建议拆分为更小的子组件"
+      }
+    ],
+    "performance_concerns": [
+      {
+        "file": "src/pages/AIPractice.tsx",
+        "issue": "大量状态和计算可能影响性能，建议使用 useMemo 和 useCallback 优化"
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate_actions": [
+      "为 src/pages/AIPractice.tsx 添加单元测试",
+      "将 src/pages/AIPractice.tsx 拆分为更小的子组件",
+      "配置 ESLint 和 Prettier 保证代码质量",
+      "添加 Jest + React Testing Library 进行组件测试"
+    ],
+    "next_steps": [
+      "为所有页面组件添加基础测试",
+      "实现组件的错误边界处理",
+      "添加性能监控和优化",
+      "配置 CI/CD 流程"
+    ],
+    "long_term_improvements": [
+      "添加 E2E 测试",
+      "实现状态管理库（如 Redux Toolkit 或 Zustand）",
+      "添加国际化支持",
+      "实现 PWA 功能"
+    ]
+  },
+  "ignored_patterns": [
+    "node_modules/**",
+    ".git/**",
+    "dist/**",
+    "build/**",
+    ".next/**",
+    "__pycache__/**",
+    "*.lock",
+    "*.log",
+    "*.bin",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.mp4",
+    "*.zip",
+    "*.tar",
+    "*.gz"
+  ],
+  "scan_metadata": {
+    "scan_duration_seconds": 15,
+    "scan_strategy": "comprehensive",
+    "last_scan": "2025-11-22T21:08:44+08:00",
+    "next_scan_suggested_paths": []
+  }
+}
