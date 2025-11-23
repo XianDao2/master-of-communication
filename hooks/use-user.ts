@@ -5,11 +5,10 @@ import { User } from "@supabase/supabase-js";
 import { useRouter } from 'next/navigation';
 
 // 用户类型定义
-export interface UserProfile extends User {
+export interface UserProfile {
   name?: string;
   bio?: string;
   location?: string;
-  avatarUrl?: string;
 }
 
 export function useUser() {
@@ -47,7 +46,7 @@ export function useUser() {
       // 尝试从用户表获取额外的用户资料
       const { data: profileData, error: profileError } = await supabase
         .from('users')
-        .select('name, bio, location, avatar_url')
+        .select('name, bio, location')
         .eq('id', supabaseUser.id)
         .single();
 
@@ -64,8 +63,7 @@ export function useUser() {
           ...supabaseUser,
           name: profileData.name,
           bio: profileData.bio,
-          location: profileData.location,
-          avatarUrl: profileData.avatar_url
+          location: profileData.location
         });
       }
     } catch (err) {
@@ -214,7 +212,7 @@ export function useUser() {
           name: data.name,
           bio: data.bio,
           location: data.location,
-          avatar_url: data.avatarUrl
+      
         });
       
       if (error) {

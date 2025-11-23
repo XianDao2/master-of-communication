@@ -196,7 +196,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+
   
   // 通知设置
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(initialNotificationSettings);
@@ -262,12 +262,11 @@ export default function SettingsPage() {
       // 在实际应用中，这里应该调用updateUserProfile函数
       if (updateUserProfile) {
         await updateUserProfile({
-          name,
-          email,
-          bio,
-          location,
-          avatarUrl
-        });
+            name,
+            email,
+            bio,
+            location
+          });
       }
       
       // 显示成功消息
@@ -362,47 +361,7 @@ export default function SettingsPage() {
       )}>
         <h3 className="text-lg font-medium mb-4">个人资料</h3>
         
-        <div className="flex flex-col md:flex-row gap-6 mb-6">
-          <div className="flex-shrink-0">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-blue-500">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="用户头像"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/images/default-avatar.jpg';
-                  }}
-                />
-              ) : (
-                <div className={cn(
-                  "w-full h-full flex items-center justify-center",
-                  theme === 'dark' ? 'bg-slate-700' : 'bg-gray-200'
-                )}>
-                  <i className="fa-solid fa-user text-4xl text-gray-500"></i>
-                </div>
-              )}
-              <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer">
-                <i className="fa-solid fa-camera text-white text-xs"></i>
-              </div>
-            </div>
-          </div>
-          <div className="flex-grow">
-            <p className={cn(
-              "text-sm mb-2",
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            )}>
-              上传个人头像，支持 JPG, PNG 或 GIF 格式，文件大小不超过 2MB
-            </p>
-            <button className={cn(
-              "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200",
-              theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-            )}>
-              选择文件
-            </button>
-          </div>
-        </div>
+
         
         <FormField
           label="姓名"

@@ -23,7 +23,6 @@ interface FamousPerson {
   name: string; // 中文名
   nameEn: string; // 英文名
   pronunciation: string; // 带声调的拼音
-  image: string; // 头像URL
   birthYear: string; // 出生年份
   birthPlace: string; // 出生地
   field: string; // 领域
@@ -62,16 +61,8 @@ export default function FamousPeoplePage() {
       // 2. 积分扣除成功后，生成名人信息
       const personInfo = await generatePersonInfo();
 
-      // 3. 然后根据生成的信息创建头像提示词并生成头像
-      const imagePrompt = `简笔画风格的${personInfo.field}家${personInfo.name}，线条简单清晰，黑白风格，适合识别，不要文字，人物形象突出，背景简洁`;
-      const imageUrl = await generateAvatar(imagePrompt);
-
-      // 4. 组合完整的名人信息
-      const fullPersonInfo = {
-        ...personInfo,
-        image: imageUrl,
-      };
-      setFamousPerson(fullPersonInfo);
+      // 3. 设置名人信息
+      setFamousPerson(personInfo);
 
       // 5. 记录搜索历史
       await recordSearchHistory({
@@ -166,27 +157,7 @@ export default function FamousPeoplePage() {
     return JSON.parse(jsonMatch[0]);
   };
 
-  const generateAvatar = async (prompt: string): Promise<string> => {
-    const client = new OpenAI({
-      baseURL: process.env.OPENAI_BASE_URL || "https://api.siliconflow.cn/v1",
-      apiKey:
-        process.env.OPENROUTER_API_KEY ||
-        process.env.OPENAI_API_KEY ||
-        "sk-tvcwevarnuxopipulvzsqilteuwbrivzihandabyzprbijhl",
-      dangerouslyAllowBrowser: true,
-    });
 
-    const response = await client.images.generate({
-      model: "Kwai-Kolors/Kolors",
-      prompt: prompt,
-    });
-
-    if (!response.data || !response.data[0]?.url) {
-      throw new Error("无法生成头像");
-    }
-
-    return response.data[0].url;
-  };
 
   // 组件加载时自动生成一位名人
   // useEffect(() => {
