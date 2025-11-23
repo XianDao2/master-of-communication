@@ -626,7 +626,7 @@ const categoryList = [...new Set(articles.map(article => article.category))];
 const allTags = [...new Set(articles.flatMap(article => article.tags))];
 
 // 文章卡片组件
-const ArticleCard: React.FC<{ article: Article; theme: string }> = ({ article, theme }) => {
+const ArticleCard: React.FC<{ article: Article; theme: string; onReadMore: (article: Article) => void }> = ({ article, theme, onReadMore }) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
@@ -758,8 +758,9 @@ const ArticleCard: React.FC<{ article: Article; theme: string }> = ({ article, t
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onReadMore(article)}
             className={cn(
-              "px-4 py-2 rounded-lg font-medium transition-colors duration-200",
+              "px-4 py-2 rounded-lg font-medium transition-colors duration-200 cursor-pointer",
               theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
             )}
           >
@@ -772,7 +773,7 @@ const ArticleCard: React.FC<{ article: Article; theme: string }> = ({ article, t
 };
 
 // 特色文章组件
-const FeaturedArticle: React.FC<{ article: Article; theme: string }> = ({ article, theme }) => {
+const FeaturedArticle: React.FC<{ article: Article; theme: string; onReadMore: (article: Article) => void }> = ({ article, theme, onReadMore }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -845,7 +846,8 @@ const FeaturedArticle: React.FC<{ article: Article; theme: string }> = ({ articl
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-5 py-2.5 bg-white text-blue-600 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-100"
+          onClick={() => onReadMore(article)}
+          className="px-5 py-2.5 bg-white text-blue-600 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-100 cursor-pointer"
         >
           阅读全文
         </motion.button>
@@ -940,6 +942,157 @@ const CategoryCard: React.FC<{ category: Category; theme: string; onClick: () =>
   );
 };
 
+// 文章详情组件
+const ArticleDetail: React.FC<{ article: Article; theme: string; onClose: () => void }> = ({ article, theme, onClose }) => {
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'advanced': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
+  const getLevelText = (level: string) => {
+    switch (level) {
+      case 'beginner': return '初级';
+      case 'intermediate': return '中级';
+      case 'advanced': return '高级';
+      default: return '未知';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className={cn(
+          "relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-6 md:p-8",
+          theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className={cn(
+            "absolute top-4 right-4 p-2 rounded-full",
+            theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
+          )}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div className="mb-6">
+          <div className="h-64 md:h-80 overflow-hidden rounded-lg mb-6">
+            <img
+              src={article.featuredImage}
+              alt={article.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/default-article.jpg';
+              }}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-4">
+            <span className={cn(
+              "px-3 py-1 rounded-full text-xs font-medium",
+              theme === 'dark' ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'
+            )}>
+              {article.category}
+            </span>
+            {article.isPremium && (
+              <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                ⭐ 高级内容
+              </span>
+            )}
+            <span className={cn(
+              "px-2 py-1 rounded-full text-xs font-medium",
+              getLevelColor(article.level)
+            )}>
+              {getLevelText(article.level)}
+            </span>
+            <span className={cn(
+              "text-sm",
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            )}>
+              {article.readTime}
+            </span>
+            <span className={cn(
+              "text-sm",
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            )}>
+              {article.date}
+            </span>
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-bold mb-4">
+            {article.title}
+          </h1>
+
+          {article.author && (
+            <div className="flex items-center gap-3 mb-6">
+              <img
+                src={article.author.avatar}
+                alt={article.author.name}
+                className="w-10 h-10 rounded-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/images/default-avatar.jpg';
+                }}
+              />
+              <div>
+                <div className={cn(
+                  "font-medium",
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                )}>
+                  {article.author.name}
+                </div>
+                <div className={cn(
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                )}>
+                  {article.author.role}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-6">
+            {article.tags.map((tag, index) => (
+              <span key={index} className={cn(
+                "px-2 py-1 rounded-md text-xs",
+                theme === 'dark' ? 'bg-slate-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+              )}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className={cn(
+          "prose max-w-none",
+          theme === 'dark' ? 'prose-invert' : ''
+        )}>
+          {article.content.split('\n').map((paragraph, index) => (
+            <p key={index} className="mb-4">{paragraph}</p>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 export default function KnowledgePage() {
   const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -950,6 +1103,16 @@ export default function KnowledgePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState<'articles' | 'categories'>('articles');
   const [levelFilter, setLevelFilter] = useState<string>('all');
+  
+  // 处理阅读全文
+  const handleReadMore = (article: Article) => {
+    setActiveArticle(article);
+  };
+  
+  // 关闭文章详情
+  const handleCloseDetail = () => {
+    setActiveArticle(null);
+  };
 
   // 过滤文章
   useEffect(() => {
@@ -1030,7 +1193,7 @@ export default function KnowledgePage() {
         {/* 主要特色文章 */}
         {mainFeaturedArticle && (
           <div className="mb-12">
-            <FeaturedArticle article={mainFeaturedArticle} theme={theme} />
+            <FeaturedArticle article={mainFeaturedArticle} theme={theme} onReadMore={handleReadMore} />
           </div>
         )}
 
@@ -1242,7 +1405,7 @@ export default function KnowledgePage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ArticleCard article={article} theme={theme} />
+                    <ArticleCard article={article} theme={theme} onReadMore={handleReadMore} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -1301,7 +1464,7 @@ export default function KnowledgePage() {
             <h2 className="text-2xl font-bold mb-6">更多精选文章</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {otherFeaturedArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} theme={theme} />
+                <ArticleCard key={article.id} article={article} theme={theme} onReadMore={handleReadMore} />
               ))}
             </div>
           </div>
@@ -1361,6 +1524,15 @@ export default function KnowledgePage() {
           <div className="absolute -left-12 -top-12 w-40 h-40 rounded-full bg-indigo-500/10 blur-2xl"></div>
         </motion.div>
       </div>
+      
+      {/* 文章详情弹窗 */}
+      {activeArticle && (
+        <ArticleDetail 
+          article={activeArticle} 
+          theme={theme} 
+          onClose={handleCloseDetail} 
+        />
+      )}
     </div>
   );
 }
