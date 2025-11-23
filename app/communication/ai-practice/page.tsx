@@ -32,6 +32,7 @@ interface Conversation {
   lastMessage: string;
   timestamp: Date;
   scenarioId: string;
+  messages: Message[];
 }
 
 // 定义场景接口
@@ -929,7 +930,7 @@ export default function AIPracticePage() {
     // 更新当前对话记录
     setConversations(prev => prev.map(conv => 
       conv.id === conversations[conversations.length - 1]?.id
-        ? { ...conv, messages: [...conv.messages, userMessage], updatedAt: new Date() }
+        ? { ...conv, messages: [...(conv.messages || []), userMessage], updatedAt: new Date() }
         : conv
     ));
     
@@ -991,7 +992,7 @@ export default function AIPracticePage() {
       if (isMountedRef.current) {
         setConversations(prev => prev.map(conv => 
           conv.id === conversations[conversations.length - 1]?.id
-            ? { ...conv, messages: [...conv.messages, aiMessage], updatedAt: new Date() }
+            ? { ...conv, messages: [...(conv.messages || []), aiMessage], updatedAt: new Date() }
             : conv
         ));
       }
