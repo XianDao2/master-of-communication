@@ -348,6 +348,25 @@ export default function AssessmentPage() {
       setIsAnalyzing(true);
 
       // 准备发送给大模型的提示信息
+      // 构建用户选择的详细信息
+      const userSelections = Object.entries(answers).map(([questionId, selectedValue]) => {
+        // 将字符串类型的ID和值转换为数字类型，以匹配Question接口定义
+        const questionIdNum = parseInt(questionId, 10);
+        const selectedValueNum = parseInt(selectedValue, 10);
+        
+        const question = questions.find(q => q.id === questionIdNum);
+        const selectedOption = question?.options.find(opt => opt.value === selectedValueNum);
+        
+        return {
+          questionId: questionIdNum,
+          questionText: question?.text || 'Unknown Question',
+          selectedValue: selectedValueNum,
+          selectedOptionText: selectedOption?.text || 'Unknown Option'
+        };
+      });
+      const questionsMatch = userSelections.map(selection => `- 问题${selection.questionId}: ${selection.questionText}\n  选择: ${selection.selectedOptionText} (值: ${selection.selectedValue})`).join('\n        ');
+      
+      console.log(questionsMatch);
       const prompt = `
         你是一位专业的沟通能力分析专家，擅长基于沟通能力评估结果提供深入分析和个性化建议。
 
@@ -356,6 +375,8 @@ export default function AssessmentPage() {
         - 总体得分
         - 维度得分
         - 核心结论
+        - 用户详细选择信息
+        ${ questionsMatch}
 
         ### 指令
         基于上述评估结果，按照以下要求生成标准JSON输出：
