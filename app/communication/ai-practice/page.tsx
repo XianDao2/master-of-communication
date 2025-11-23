@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useUser } from '@/hooks/use-user';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { OpenAI } from 'openai';
 
 // 定义消息接口
 interface Message {
@@ -95,7 +96,121 @@ interface MessageAnalysis {
   empathy: number;
   suggestions: string[];
   improvementSuggestions?: string[];
+  feedback?: string; // AI生成的综合反馈
 }
+
+// 定义对话分析接口
+interface ConversationAnalysis {
+  overallScore: number;
+  goalAchievement: number;
+  interactionSmoothness: number;
+  emotionalManagement: number;
+  empathy: number;
+  communicationStrategy: number;
+  strengths: string[];
+  weaknesses: string[];
+  summary: string;
+}
+
+// ConversationAnalysisSummary 组件 - 对话分析结果展示
+const ConversationAnalysisSummary: React.FC<{ analysis: ConversationAnalysis | null, isAnalyzing: boolean }> = ({ analysis, isAnalyzing }) => {
+  if (isAnalyzing) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-300">正在分析对话质量，请稍候...</p>
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <p className="text-gray-600 dark:text-gray-300">暂无对话分析结果</p>
+      </div>
+    );
+  }
+
+  // 分析维度配置
+  const analysisDimensions = [
+    { key: 'goalAchievement', label: '目标达成度', icon: '🎯' },
+    { key: 'interactionSmoothness', label: '交互流畅性', icon: '💬' },
+    { key: 'emotionalManagement', label: '情绪管理', icon: '😊' },
+    { key: 'empathy', label: '共情能力', icon: '🤝' },
+    { key: 'communicationStrategy', label: '沟通策略', icon: '📊' }
+  ];
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <h3 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">对话质量分析</h3>
+      
+      {/* 总体评分卡片 */}
+      <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <div className="flex items-center justify-between">
+          <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200">总体评分</h4>
+          <div className="flex items-center">
+            <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{analysis.overallScore}</span>
+            <span className="ml-2 text-gray-600 dark:text-gray-400">/ 5</span>
+          </div>
+        </div>
+        <div className="mt-2 text-gray-600 dark:text-gray-300">{analysis.summary}</div>
+      </div>
+
+      {/* 各维度评分 */}
+      <div className="mb-8">
+        <h4 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">各维度评分</h4>
+        <div className="space-y-4">
+          {analysisDimensions.map(dim => (
+            <div key={dim.key} className="flex flex-col">
+              <div className="flex justify-between mb-1">
+                <span className="flex items-center text-gray-600 dark:text-gray-300">
+                  <span className="mr-2">{dim.icon}</span>
+                  {dim.label}
+                </span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {analysis[dim.key as keyof ConversationAnalysis]}/5
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-blue-500"
+                  style={{ width: `${(analysis[dim.key as keyof ConversationAnalysis] as number / 5) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 优缺点分析 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 优点 */}
+        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+          <h4 className="text-lg font-semibold mb-3 flex items-center text-gray-700 dark:text-gray-200">
+            <span className="mr-2">👍</span> 优点
+          </h4>
+          <ul className="list-disc pl-6 space-y-1 text-gray-600 dark:text-gray-300">
+            {analysis.strengths.map((strength, index) => (
+              <li key={index}>{strength}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* 不足 */}
+        <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+          <h4 className="text-lg font-semibold mb-3 flex items-center text-gray-700 dark:text-gray-200">
+            <span className="mr-2">📝</span> 待改进
+          </h4>
+          <ul className="list-disc pl-6 space-y-1 text-gray-600 dark:text-gray-300">
+            {analysis.weaknesses.map((weakness, index) => (
+              <li key={index}>{weakness}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // AnalysisRadar 组件 - 雷达图分析
 const AnalysisRadar: React.FC<{
@@ -237,6 +352,11 @@ const MessageAnalysisPanel: React.FC<{
 
   return (
     <div className={theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}>
+      {analysis.feedback && (
+        <div className={`mb-6 p-4 rounded-lg border ${theme === 'dark' ? 'bg-blue-900/20 border-blue-800 text-blue-300' : 'bg-blue-50 border-blue-100 text-blue-800'}`}>
+          <p className="italic">{analysis.feedback}</p>
+        </div>
+      )}
       <div className="space-y-6">
         <div>
           <h4 className="font-semibold mb-3">语言表达</h4>
@@ -664,6 +784,7 @@ export default function AIPracticePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestedResponses, setSuggestedResponses] = useState<SuggestedResponse[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [conversationAnalysis, setConversationAnalysis] = useState<ConversationAnalysis | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
   
@@ -827,6 +948,73 @@ export default function AIPracticePage() {
     }
   };
 
+  // 创建OpenAI客户端实例 - 参考pronunciation-generator.tsx的配置
+  const getOpenAIClient = () => {
+    return new OpenAI({
+      baseURL: process.env.OPENAI_BASE_URL || "https://api.siliconflow.cn/v1",
+      apiKey:
+        process.env.OPENROUTER_API_KEY ||
+        process.env.OPENAI_API_KEY ||
+        "sk-tvcwevarnuxopipulvzsqilteuwbrivzihandabyzprbijhl",
+      dangerouslyAllowBrowser: true,
+    });
+  };
+
+  // 使用大模型分析消息的沟通评价
+  const analyzeMessage = async (message: string, scenario: Scenario): Promise<any> => {
+    try {
+      const client = getOpenAIClient();
+      
+      const prompt = `
+        分析以下用户消息的沟通质量，从以下五个维度进行评分（1-5分，1分最差，5分最好）：
+        1. 语言表达：评估语言的清晰度、准确性和专业性
+        2. 情绪管理：评估情绪表达的适当性和控制能力
+        3. 逻辑结构：评估内容的组织和逻辑连贯性
+        4. 共情能力：评估对对方立场的理解和认同
+        5. 沟通效果：综合评估消息达成预期目标的有效性
+        
+        消息内容："${message}"
+        沟通场景：${scenario.title}
+        场景描述：${scenario.description}
+        
+        请以JSON格式返回分析结果，包含以下字段：
+        - languageExpression: 语言表达评分（1-5）
+        - emotionalManagement: 情绪管理评分（1-5）
+        - logicalStructure: 逻辑结构评分（1-5）
+        - empathy: 共情能力评分（1-5）
+        - communicationEffectiveness: 沟通效果评分（1-5）
+        - feedback: 对消息的简短评价（100字以内）
+        - suggestions: 2-3条改进建议
+      `;
+
+      const response = await client.chat.completions.create({
+        model: "THUDM/GLM-4.1V-9B-Thinking",
+        messages: [{ role: "system", content: "你是一位专业的沟通顾问，擅长分析和评价沟通质量。" },
+                  { role: "user", content: prompt }],
+        temperature: 0.3,
+      });
+
+      // 解析AI的JSON响应
+      const analysisContent = response.choices[0].message.content;
+      const cleanContent = analysisContent.replace(/```json|```/g, '').trim();
+      const analysis = JSON.parse(cleanContent);
+      
+      return analysis;
+    } catch (error) {
+      console.error('Error analyzing message:', error);
+      // 返回默认分析结果作为后备
+      return {
+        languageExpression: Math.floor(Math.random() * 3) + 3,
+        emotionalManagement: Math.floor(Math.random() * 3) + 3,
+        logicalStructure: Math.floor(Math.random() * 3) + 3,
+        empathy: Math.floor(Math.random() * 3) + 3,
+        communicationEffectiveness: Math.floor(Math.random() * 3) + 3,
+        feedback: "分析过程中出现错误，使用默认评价。",
+        suggestions: ["继续保持良好的沟通风格", "尝试在适当的场合使用更丰富的表达方式"]
+      };
+    }
+  };
+
   // 生成改进建议
   const generateImprovementSuggestions = (analysis: MessageAnalysis): string[] => {
     const suggestions: string[] = [];
@@ -935,26 +1123,29 @@ export default function AIPracticePage() {
     ));
     
     try {
-      // 生成消息分析
+      // 生成消息分析 - 使用大模型进行实时分析
       setIsAnalyzing(true);
-      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟分析时间
+      
+      // 调用大模型分析消息
+      const aiAnalysis = await analyzeMessage(newMessage, selectedScenario);
       
       // 为用户消息生成分析数据
       const analysis: MessageAnalysis = {
-        languageExpression: Math.floor(Math.random() * 3) + 3, // 3-5分
-        emotionalManagement: Math.floor(Math.random() * 3) + 3,
-        logicalStructure: Math.floor(Math.random() * 3) + 3,
-        communicationEffectiveness: Math.floor(Math.random() * 3) + 3,
-        empathy: Math.floor(Math.random() * 3) + 3,
-        suggestions: generateSuggestions(newMessage),
-        improvementSuggestions: generateImprovementSuggestions({
-          languageExpression: Math.floor(Math.random() * 3) + 3,
-          emotionalManagement: Math.floor(Math.random() * 3) + 3,
-          logicalStructure: Math.floor(Math.random() * 3) + 3,
-          communicationEffectiveness: Math.floor(Math.random() * 3) + 3,
-          empathy: Math.floor(Math.random() * 3) + 3
+        languageExpression: aiAnalysis.languageExpression || Math.floor(Math.random() * 3) + 3,
+        emotionalManagement: aiAnalysis.emotionalManagement || Math.floor(Math.random() * 3) + 3,
+        logicalStructure: aiAnalysis.logicalStructure || Math.floor(Math.random() * 3) + 3,
+        communicationEffectiveness: aiAnalysis.communicationEffectiveness || Math.floor(Math.random() * 3) + 3,
+        empathy: aiAnalysis.empathy || Math.floor(Math.random() * 3) + 3,
+        suggestions: aiAnalysis.suggestions || generateSuggestions(newMessage),
+        improvementSuggestions: aiAnalysis.suggestions || generateImprovementSuggestions({
+          languageExpression: aiAnalysis.languageExpression || Math.floor(Math.random() * 3) + 3,
+          emotionalManagement: aiAnalysis.emotionalManagement || Math.floor(Math.random() * 3) + 3,
+          logicalStructure: aiAnalysis.logicalStructure || Math.floor(Math.random() * 3) + 3,
+          communicationEffectiveness: aiAnalysis.communicationEffectiveness || Math.floor(Math.random() * 3) + 3,
+          empathy: aiAnalysis.empathy || Math.floor(Math.random() * 3) + 3
         }),
-        optimalResponse: generateOptimalResponse(newMessage, selectedScenario)
+        optimalResponse: generateOptimalResponse(newMessage, selectedScenario),
+        feedback: aiAnalysis.feedback
       };
       
       // 更新用户消息，添加分析数据
@@ -1035,10 +1226,84 @@ export default function AIPracticePage() {
     }
   };
   
+  // 分析整个对话的沟通评价
+  const analyzeConversation = async (messages: Message[], scenario: Scenario): Promise<any> => {
+    try {
+      const client = getOpenAIClient();
+      
+      // 构建对话历史文本
+      const conversationText = messages.map(msg => 
+        `${msg.sender === 'user' ? '用户' : 'AI'}: ${msg.content}`
+      ).join('\n');
+      
+      const prompt = `
+        分析以下完整对话的整体沟通质量，从以下几个维度进行评价：
+        1. 沟通目标达成度：评估对话是否有效地达成了预期目标
+        2. 互动流畅性：评估对话的连贯性和流畅程度
+        3. 情绪管理：评估双方情绪表达的适当性和控制能力
+        4. 共情能力：评估用户对AI立场的理解和认同程度
+        5. 沟通策略：评估用户采用的沟通策略是否适合该场景
+        
+        沟通场景：${scenario.title}
+        场景描述：${scenario.description}
+        对话历史：
+        ${conversationText}
+        
+        请以JSON格式返回分析结果，包含以下字段：
+        - overallScore: 整体评分（1-5分，1分最差，5分最好）
+        - goalAchievement: 沟通目标达成度评分（1-5）
+        - interactionSmoothness: 互动流畅性评分（1-5）
+        - emotionalManagement: 情绪管理评分（1-5）
+        - empathy: 共情能力评分（1-5）
+        - communicationStrategy: 沟通策略评分（1-5）
+        - strengths: 对话中的优点（2-3点）
+        - weaknesses: 需要改进的地方（2-3点）
+        - summary: 整体评价和建议（200字以内）
+      `;
+
+      const response = await client.chat.completions.create({
+        model: "THUDM/GLM-4.1V-9B-Thinking",
+        messages: [{ role: "system", content: "你是一位专业的沟通顾问，擅长分析完整对话的沟通质量。" },
+                  { role: "user", content: prompt }],
+        temperature: 0.3,
+      });
+
+      // 解析AI的JSON响应
+      const analysisContent = response.choices[0].message.content;
+      const cleanContent = analysisContent.replace(/```json|```/g, '').trim();
+      const analysis = JSON.parse(cleanContent);
+      
+      return analysis;
+    } catch (error) {
+      console.error('Error analyzing conversation:', error);
+      // 返回默认分析结果作为后备
+      return {
+        overallScore: Math.floor(Math.random() * 2) + 3,
+        goalAchievement: Math.floor(Math.random() * 2) + 3,
+        interactionSmoothness: Math.floor(Math.random() * 2) + 3,
+        emotionalManagement: Math.floor(Math.random() * 2) + 3,
+        empathy: Math.floor(Math.random() * 2) + 3,
+        communicationStrategy: Math.floor(Math.random() * 2) + 3,
+        strengths: ["对话保持了基本的连贯性", "用户积极参与互动"],
+        weaknesses: ["可以进一步提高共情能力", "沟通策略可以更加多样化"],
+        summary: "对话整体表现良好，但在共情和策略方面还有提升空间。建议在未来的沟通中，更加关注对方的需求和感受，采用更加灵活多变的沟通方式。"
+      };
+    }
+  };
+
   // 结束对话，查看分析
-  const endConversation = () => {
+  const endConversation = async () => {
     // 保存练习记录到进度系统
     savePracticeRecord();
+    
+    // 如果有对话内容和选定的场景，分析整个对话
+    if (messages.length > 0 && selectedScenario) {
+      setIsAnalyzing(true);
+      const conversationAnalysis = await analyzeConversation(messages, selectedScenario);
+      setConversationAnalysis(conversationAnalysis);
+      setIsAnalyzing(false);
+    }
+    
     setCurrentView('analysis');
   };
   
@@ -1519,6 +1784,15 @@ export default function AIPracticePage() {
                 </div>
               </div>
               
+              {/* 对话质量分析区域 */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4">对话质量分析</h2>
+                <ConversationAnalysisSummary 
+                  analysis={conversationAnalysis} 
+                  isAnalyzing={isAnalyzing} 
+                />
+              </div>
+
               {/* 改进建议区域 */}
               <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-4">改进建议</h2>
