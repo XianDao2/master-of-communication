@@ -10,14 +10,14 @@ export function Logo() {
       <div className="flex items-center justify-center">
         <Image
           src="/images/lgo.png"
-          alt="QuickLearnChinese Logo"
+          alt="沟通大师 Logo"
           width={32}
           height={32}
           className="w-8 h-8"
         />
       </div>
       <span className="font-bold text-lg bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-        QuickLearnChinese
+        沟通大师
       </span>
     </Link>
   );

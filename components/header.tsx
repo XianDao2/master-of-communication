@@ -21,19 +21,16 @@ export default function Header({ user }: HeaderProps) {
   const pathname = usePathname();
   const isDashboard = pathname?.startsWith("/dashboard");
 
-  // Main navigation items for QuickLearnChinese
+  // 沟通大师主导航项
   const mainNavItems: NavItem[] = [
-    { label: "Home", href: "/" },
-    // { label: "名人", href: "/famous-people" },
-    // { label: "沟通", href: "/communication" },
+    { label: "首页", href: "/" },
     { label: "AI练习", href: "/communication/ai-practice" },
     { label: "评估", href: "/communication/assessment" },
     { label: "知识", href: "/communication/knowledge" },
     { label: "进度", href: "/communication/progress" },
     { label: "设置", href: "/communication/settings" },
-    { label: "Pricing", href: "/pricing" },
-    // { label: "Avatar", href: "/avatar-generator" },
-    { label: "About", href: "/product/about" },
+    { label: "定价", href: "/pricing" },
+    { label: "关于我们", href: "/product/about" },
   ];
 
   // Dashboard items - empty array as we don't want navigation items in dashboard
@@ -74,27 +71,27 @@ export default function Header({ user }: HeaderProps) {
               {!isDashboard && (
                 <>
                   <Button asChild size="sm" variant="default">
-                    <Link href="/profile">Profile</Link>
+                    <Link href="/profile">个人中心</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href="/dashboard">Dashboard</Link>
+                    <Link href="/dashboard">仪表盘</Link>
                   </Button>
                 </>
               )}
               <form action={signOutAction}>
                 <Button type="submit" variant="outline" size="sm">
-                  Sign out
+                  退出
                 </Button>
               </form>
             </div>
           ) : (
             <div className="hidden md:flex gap-2">
               <Button asChild size="sm" variant="outline">
-                <Link href="/sign-in">Sign in</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/sign-up">Sign up</Link>
-              </Button>
+                  <Link href="/sign-in">登录</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/sign-up">注册</Link>
+                </Button>
             </div>
           )}
           <MobileNav items={navItems} user={user} isDashboard={isDashboard} />

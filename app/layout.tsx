@@ -12,23 +12,23 @@ const baseUrl = process.env.BASE_URL
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
-  title: "QuickLearnChinese - Learn Chinese Quickly and Easily",
-  description: "QuickLearnChinese helps you learn Chinese efficiently with AI-powered tools, personalized lessons, and interactive exercises.",
-  keywords: "learn Chinese, Chinese learning, AI Chinese learning, Chinese lessons, study Chinese, Chinese language",
+  title: "沟通大师 - 提升沟通能力的专业平台",
+  description: "沟通大师帮助你通过AI驱动的工具、个性化学习计划和实践反馈，有效提升沟通能力和技巧。",
+  keywords: "沟通技巧,沟通能力提升,有效沟通,职场沟通,人际关系,沟通训练",
   icons: {
     icon: "/images/lgo.png",
     shortcut: "/images/lgo.png",
   },
   openGraph: {
-    title: "QuickLearnChinese - Learn Chinese Quickly and Easily",
-    description: "QuickLearnChinese helps you learn Chinese efficiently with AI-powered tools, personalized lessons, and interactive exercises.",
+    title: "沟通大师 - 提升沟通能力的专业平台",
+    description: "沟通大师帮助你通过AI驱动的工具、个性化学习计划和实践反馈，有效提升沟通能力和技巧。",
     type: "website",
     url: baseUrl,
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuickLearnChinese - Learn Chinese Quickly and Easily",
-    description: "QuickLearnChinese helps you learn Chinese efficiently with AI-powered tools.",
+    title: "沟通大师 - 提升沟通能力的专业平台",
+    description: "沟通大师帮助你有效提升沟通能力和技巧。",
   },
 };
 

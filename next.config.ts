@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   webpack: (config: any) => {
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/QuickLearnChinese/**', '**/node_modules/**'],
+      ignored: ['**/node_modules/**'],
     };
     return config;
   },
