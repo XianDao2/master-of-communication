@@ -126,25 +126,11 @@ export default function ProfilePage() {
   };
 
   const getSearchTypeLabel = (searchType: string) => {
-    switch (searchType) {
-      case 'famous_person_search':
-        return 'Famous Person';
-      case 'pronunciation_search':
-        return 'Pronunciation';
-      default:
-        return 'Other';
-    }
+    return 'Search';
   };
 
   const getSearchTypeColor = (searchType: string) => {
-    switch (searchType) {
-      case 'famous_person_search':
-        return 'bg-amber-100 text-amber-700';
-      case 'pronunciation_search':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
+    return 'bg-gray-100 text-gray-700';
   };
 
   const handleDeleteHistory = async (history: SearchHistoryRecord) => {

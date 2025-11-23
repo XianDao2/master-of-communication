@@ -6,7 +6,7 @@
  * @param operation 操作类型描述
  * @returns Promise<boolean> 操作是否成功
  */
-export const consumeCredits = async (amount: number = 1, operation: string = 'famous_person_search'): Promise<boolean> => {
+export const consumeCredits = async (amount: number = 1, operation: string = 'other'): Promise<boolean> => {
   try {
     const response = await fetch('/api/credits', {
       method: 'POST',

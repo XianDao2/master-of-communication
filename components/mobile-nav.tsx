@@ -41,15 +41,7 @@ export function MobileNav({ items, user, isDashboard }: MobileNavProps) {
               {item.label}
             </Link>
           ))}
-          {/* Ensure Pronunciation link is always available */}
-          {!items.some(item => item.href === '/pronunciation') && (
-            <Link
-              href="/pronunciation"
-              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary"
-            >
-              Pronunciation
-            </Link>
-          )}
+          {/* 已移除Pronunciation链接 */}
           
           {/* Ensure Communication links are always available */}
           {!items.some(item => item.href === '/communication') && (
