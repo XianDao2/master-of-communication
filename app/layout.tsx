@@ -15,6 +15,10 @@ export const metadata = {
   title: "QuickLearnChinese - Learn Chinese Quickly and Easily",
   description: "QuickLearnChinese helps you learn Chinese efficiently with AI-powered tools, personalized lessons, and interactive exercises.",
   keywords: "learn Chinese, Chinese learning, AI Chinese learning, Chinese lessons, study Chinese, Chinese language",
+  icons: {
+    icon: "/images/lgo.png",
+    shortcut: "/images/lgo.png",
+  },
   openGraph: {
     title: "QuickLearnChinese - Learn Chinese Quickly and Easily",
     description: "QuickLearnChinese helps you learn Chinese efficiently with AI-powered tools, personalized lessons, and interactive exercises.",

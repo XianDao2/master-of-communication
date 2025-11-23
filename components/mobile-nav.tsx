@@ -50,6 +50,56 @@ export function MobileNav({ items, user, isDashboard }: MobileNavProps) {
               Pronunciation
             </Link>
           )}
+          
+          {/* Ensure Communication links are always available */}
+          {!items.some(item => item.href === '/communication') && (
+            <Link
+              href="/communication"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary"
+            >
+              沟通
+            </Link>
+          )}
+          {!items.some(item => item.href === '/communication/ai-practice') && (
+            <Link
+              href="/communication/ai-practice"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
+            >
+              AI练习
+            </Link>
+          )}
+          {!items.some(item => item.href === '/communication/assessment') && (
+            <Link
+              href="/communication/assessment"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
+            >
+              评估
+            </Link>
+          )}
+          {!items.some(item => item.href === '/communication/knowledge') && (
+            <Link
+              href="/communication/knowledge"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
+            >
+              知识
+            </Link>
+          )}
+          {!items.some(item => item.href === '/communication/progress') && (
+            <Link
+              href="/communication/progress"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
+            >
+              进度
+            </Link>
+          )}
+          {!items.some(item => item.href === '/communication/settings') && (
+            <Link
+              href="/communication/settings"
+              className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
+            >
+              设置
+            </Link>
+          )}
         </nav>
         <div className="mt-auto pt-4 border-t">
           {user ? (

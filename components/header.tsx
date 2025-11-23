@@ -24,9 +24,15 @@ export default function Header({ user }: HeaderProps) {
   // Main navigation items for QuickLearnChinese
   const mainNavItems: NavItem[] = [
     { label: "Home", href: "/" },
-    { label: "名人", href: "/famous-people" },
+    // { label: "名人", href: "/famous-people" },
+    // { label: "沟通", href: "/communication" },
+    { label: "AI练习", href: "/communication/ai-practice" },
+    { label: "评估", href: "/communication/assessment" },
+    { label: "知识", href: "/communication/knowledge" },
+    { label: "进度", href: "/communication/progress" },
+    { label: "设置", href: "/communication/settings" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Avatar", href: "/avatar-generator" },
+    // { label: "Avatar", href: "/avatar-generator" },
     { label: "About", href: "/product/about" },
   ];
 
