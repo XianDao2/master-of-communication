@@ -283,8 +283,16 @@ export default function AssessmentPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [result, setResult] = useState<AssessmentResult | null>(null);
-  const [modelAnalysis, setModelAnalysis] =
-    useState<ModelAnalysisResult | null>(null);
+  const [modelAnalysis, setModelAnalysis] = useState<ModelAnalysisResult>({
+    overallAnalysis: "",
+    personalizedAdvice: "",
+    communicationStyle: "",
+    potentialChallenges: [],
+    developmentPlan: {
+      shortTerm: [],
+      longTerm: []
+    }
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -397,7 +405,7 @@ export default function AssessmentPage() {
         - 建议需具备可落地性，挑战需场景化，计划需分阶段
 
         ### 输出格式
-        标准JSON，字段与用户示例完全一致。确保返回的是纯JSON格式文本，必须能够格式化，不要包含任何其他无关文本。用户示例：
+        标准JSON，字段与用户示例完全一致。确保返回的是纯文本，必须能够格式化，不要包含任何其他无关文本。(must strictly follow this format):
         {
           "overallScoreInfo": {
             "score": "60/100",
@@ -463,8 +471,9 @@ export default function AssessmentPage() {
                 "actionButton": "查看进度"
               }
             ]
-          }
-}
+    }}
+    
+    }
   `
 
       // 调用大模型
