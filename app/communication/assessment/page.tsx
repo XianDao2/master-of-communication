@@ -297,7 +297,7 @@ export default function AssessmentPage() {
 
     // 选择选项后延迟500毫秒自动跳转到下一题
     // 不包括最后一题，最后一题需要用户手动点击提交
-    if (questionId < questions.length - 1) {
+    if (currentStep < questions.length - 1) {
       setTimeout(() => {
         handleNext();
       }, 500);
@@ -397,8 +397,7 @@ export default function AssessmentPage() {
         - 建议需具备可落地性，挑战需场景化，计划需分阶段
 
         ### 输出格式
-        标准JSON，字段与用户示例完全一致。确保返回的是纯JSON格式，不要包含任何其他文本。
-        例如：
+        标准JSON，字段与用户示例完全一致。确保返回的是纯JSON格式文本，必须能够格式化，不要包含任何其他无关文本。用户示例：
         {
           "overallScoreInfo": {
             "score": "60/100",
@@ -465,12 +464,12 @@ export default function AssessmentPage() {
               }
             ]
           }
-        }
+}
   `
 
       // 调用大模型
       const response = await openaiClient.chat.completions.create({
-        model: "THUDM/GLM-4.1V-9B-Thinking",
+        model: "THUDM/GLM-Z1-9B-0414",
         messages: [
           {
             role: "user",
@@ -483,9 +482,12 @@ export default function AssessmentPage() {
       });
 
       // 解析大模型返回的结果
-      const analysisResult: ModelAnalysisResult = JSON.parse(
+      const fullResult = JSON.parse(
         response.choices[0].message.content || "{}"
       );
+
+      // 提取 inDepthAnalysis 部分作为 modelAnalysis
+      const analysisResult: ModelAnalysisResult = fullResult.inDepthAnalysis || {};
 
       setModelAnalysis(analysisResult);
     } catch (error) {
