@@ -42,7 +42,7 @@ interface AssessmentResult {
 // 定义大模型分析结果接口
 interface ModelAnalysisResult {
   overallAnalysis: string;
-  personalizedAdvice: string;
+  personalizedSuggestions: string;
   communicationStyle: string;
   potentialChallenges: string[];
   developmentPlan: {
@@ -208,74 +208,7 @@ const ScoreDisplay: React.FC<{ score: number; maxScore?: number }> = ({
   );
 };
 
-// 计算评估结果
-const calculateResult = (answers: Record<number, number>): AssessmentResult => {
-  // 计算总分
-  let totalScore = 0;
-  const categoryScores: Record<string, { score: number; count: number }> = {};
 
-  Object.entries(answers).forEach(([questionId, answer]) => {
-    const question = questions.find((q) => q.id === parseInt(questionId));
-    if (question) {
-      totalScore += answer;
-
-      if (!categoryScores[question.category]) {
-        categoryScores[question.category] = { score: 0, count: 0 };
-      }
-      categoryScores[question.category].score += answer;
-      categoryScores[question.category].count += 1;
-    }
-  });
-
-  const overallScore = Math.round((totalScore / (questions.length * 5)) * 100);
-
-  // 计算各维度平均分
-  const avgCategoryScores: Record<string, number> = {};
-  Object.entries(categoryScores).forEach(([category, { score, count }]) => {
-    avgCategoryScores[category] = Math.round((score / (count * 5)) * 100);
-  });
-
-  // 生成反馈和改进建议
-  let feedback = "";
-  const improvementAreas: string[] = [];
-  const strengths: string[] = [];
-
-  if (overallScore >= 80) {
-    feedback =
-      "恭喜！你的沟通能力非常优秀。你善于表达、倾听和处理各种沟通场景。继续保持并寻求更高的突破。";
-  } else if (overallScore >= 60) {
-    feedback =
-      "你的沟通能力良好。你已经掌握了基本的沟通技巧，但仍有提升空间。关注那些得分较低的维度进行针对性练习。";
-  } else {
-    feedback =
-      "你的沟通能力有待提升。建议从基础开始，系统学习沟通技巧，并在日常中不断练习。";
-  }
-
-  // 找出强项和弱项
-  Object.entries(avgCategoryScores).forEach(([category, score]) => {
-    if (score >= 80) {
-      strengths.push(category);
-    } else if (score < 60) {
-      improvementAreas.push(category);
-    }
-  });
-
-  // 如果没有明显的强项，就将得分最高的作为强项
-  if (strengths.length === 0 && Object.keys(avgCategoryScores).length > 0) {
-    const maxCategory = Object.entries(avgCategoryScores).reduce((a, b) =>
-      a[1] > b[1] ? a : b
-    )[0];
-    strengths.push(maxCategory);
-  }
-
-  return {
-    overallScore,
-    categoryScores: avgCategoryScores,
-    feedback,
-    improvementAreas,
-    strengths,
-  };
-};
 
 export default function AssessmentPage() {
   const { theme } = useTheme();
@@ -285,7 +218,7 @@ export default function AssessmentPage() {
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [modelAnalysis, setModelAnalysis] = useState<ModelAnalysisResult>({
     overallAnalysis: "",
-    personalizedAdvice: "",
+    personalizedSuggestions: "",
     communicationStyle: "",
     potentialChallenges: [],
     developmentPlan: {
@@ -328,33 +261,98 @@ export default function AssessmentPage() {
     }
   };
 
+  // 大模型调用函数，带重试机制
+  const callModelWithRetry = async (prompt: string, maxRetries = 3, retryDelay = 2000): Promise<{ fullResult: any; analysisResult: ModelAnalysisResult }> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // 调用大模型
+        const response = await openaiClient.chat.completions.create({
+          model: "THUDM/GLM-Z1-9B-0414",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            }
+          ],
+          stream: false,
+          max_tokens: 4096,
+          temperature: 0.7,
+        });
+
+        // 解析大模型返回的结果
+        const fullResult = JSON.parse(
+          response.choices[0].message.content || "{}"
+        );
+
+        // 提取分析部分作为 modelAnalysis，并进行字段映射
+        const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+        const analysisResult: ModelAnalysisResult = {
+          overallAnalysis: analysis.overallAnalysis || "",
+          personalizedSuggestions: analysis.personalizedSuggestions || "",
+          communicationStyle: analysis.communicationStyle || "",
+          potentialChallenges: analysis.potentialChallenges || [],
+          developmentPlan: {
+            shortTerm: (() => {
+              // 检查是否存在depthAnalysis字段（用户提到的），如果不存在则使用inDepthAnalysis
+              const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+              const plan = analysis.developmentPlan;
+              if (!plan) return [];
+              const shortTerm = plan["short-term"];
+              return typeof shortTerm === "string" ? [shortTerm] : (shortTerm || []);
+            })(),
+            longTerm: (() => {
+              // 检查是否存在depthAnalysis字段（用户提到的），如果不存在则使用inDepthAnalysis
+              const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+              const plan = analysis.developmentPlan;
+              if (!plan) return [];
+              const longTerm = plan["long-term"];
+              return typeof longTerm === "string" ? [longTerm] : (longTerm || []);
+            })()
+          }
+        };
+
+        // 检查是否获取到了有效的分析结果
+        if (analysisResult.overallAnalysis || analysisResult.communicationStyle || fullResult.overallScore) {
+          return { fullResult, analysisResult };
+        }
+
+        throw new Error("未获取到有效的分析结果");
+      } catch (error) {
+        console.error(`大模型调用失败 (尝试 ${attempt}/${maxRetries}):`, error);
+        
+        // 如果不是最后一次尝试，等待后重试
+        if (attempt < maxRetries) {
+          console.log(`等待 ${retryDelay}ms 后重试...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        } else {
+          // 最后一次尝试失败，抛出错误
+          throw error;
+        }
+      }
+    }
+    
+    // 理论上不会到达这里，但为了类型安全返回一个默认值
+    return {
+      fullResult: {},
+      analysisResult: {
+        overallAnalysis: "",
+        personalizedAdvice: "",
+        communicationStyle: "",
+        potentialChallenges: [],
+        developmentPlan: {
+          shortTerm: [],
+          longTerm: []
+        }
+      }
+    };
+  };
+
   // 提交评估
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setIsAnalyzing(true);
 
     try {
-      // 计算评估结果
-      const assessmentResult = calculateResult(answers);
-      setResult(assessmentResult);
-
-      // 保存到本地存储（在实际应用中，这里应该调用API保存到服务器）
-      const savedResults =
-        localStorage.getItem("communication_assessments") || "[]";
-      const results = JSON.parse(savedResults);
-      results.push({
-        timestamp: new Date().toISOString(),
-        result: assessmentResult,
-      });
-      localStorage.setItem(
-        "communication_assessments",
-        JSON.stringify(results)
-      );
-
-      setIsSubmitting(false);
-
-      // 调用大模型进行深度分析
-      setIsAnalyzing(true);
-
       // 准备发送给大模型的提示信息
       // 构建用户选择的详细信息
       const userSelections = Object.entries(answers).map(([questionId, selectedValue]) => {
@@ -376,133 +374,152 @@ export default function AssessmentPage() {
       
       console.log(questionsMatch);
       const prompt = `
-        你是一位专业的沟通能力分析专家，擅长基于沟通能力评估结果提供深入分析和个性化建议。
+      You are a professional communication skills analysis expert, specialized in providing in-depth analysis and personalized suggestions based on communication skills assessment results.
 
-        ### 背景信息
-        用户的沟通能力评估项目如下：
-        - 总体得分
-        - 维度得分
-        - 核心结论
-        - 用户详细选择信息
-        ${ questionsMatch}
+### User Input
+${{ questionsMatch }}
 
-        ### 指令
-        基于上述评估结果，按照以下要求生成标准JSON输出：
-        1. 包含总体得分信息（score、percentage、overallEvaluation）
-        2. 包含维度得分列表（dimensionName、score、percentage）
-        3. 包含核心结论（improvementDirection、yourStrengths）
-        4. 包含深入分析：
-          - overallAnalysis：总体表现分析（结合得分分布总结水平与不均衡点）
-          - communicationStyle：沟通风格总结（结合优势与短板描述行为特征）
-          - personalizedSuggestions：个性化提升建议（需关联优势强化与短板改进的结合策略）
-          - potentialChallenges：潜在挑战列表（场景化描述短板可能引发的问题）
-          - developmentPlan：发展计划（短期行动方案需具体可执行，长期建议需系统）
-          - nextStepActionSuggestions：下一步行动建议（需包含具体动作名称、描述与操作按钮）
+### Background Information
+The user's communication skills assessment items are as follows:
+- Overall Score: Needs to be calculated based on the user's detailed selection information (e.g., Question 1 is worth 1 point, Question 2 2 points, Question 3 3 points, etc. Assume each question has the same weight. Total score is 6 points, full score is 15 points).
+- Dimension Scores: Corresponding to 3 assessment dimensions (Clarity of Expression, Constructive Communication, Listening Ability).
+- Core Conclusions: Need to summarize strengths and improvement directions based on the scores.
+- The user input includes questions and the user's detailed selection information.
 
-        ### 要求
-        - JSON结构必须严格匹配用户提供的示例格式
-        - 内容需完全基于背景信息展开，避免主观臆断
-        - 建议需具备可落地性，挑战需场景化，计划需分阶段
+### Instructions
+Based on the above assessment results, generate a standard JSON output according to the following requirements:
+1. Include overall score information (score: total points, percentage: score percentage, overallEvaluation: overall level assessment).
+2. Include dimension score list (dimensionName: dimension name, score: dimension score, percentage: dimension score percentage).
+3. Include core conclusions (improvementDirection: improvement directions, yourStrengths: personal strengths).
+4. Include in-depth analysis:
+  - overallAnalysis: Analysis of overall performance (summarize the level and imbalances based on score distribution).
+  - communicationStyle: Summary of communication style (describe behavioral characteristics based on strengths and weaknesses).
+  - personalizedSuggestions: Personalized improvement suggestions (need to link strategies for strengthening strengths and improving weaknesses).
+  - potentialChallenges: List of potential challenges (describe scenario-based problems that weaknesses may cause).
+  - developmentPlan: Development plan (short-term actions should be specific and executable, long-term suggestions should be systematic).
+  - nextStepActionSuggestions: Next action suggestions (need to include specific action name, description, and action button).
 
-        ### 输出格式
-        标准JSON，字段与用户示例完全一致。确保返回的是纯文本，必须能够格式化，不要包含任何其他无关文本。(must strictly follow this format):
-        {
-          "overallScoreInfo": {
-            "score": "60/100",
-            "percentage": "60%",
-            "overallEvaluation": "你的沟通能力良好。你已经掌握了基本的沟通技巧，但仍有提升空间。关注那些得分较低的维度进行针对性练习。"
-          },
-          "dimensionScores": [
-            {
-              "dimensionName": "表达能力",
-              "score": "40/100",
-              "percentage": "40%"
-            },
-            {
-              "dimensionName": "冲突处理",
-              "score": "60/100",
-              "percentage": "60%"
-            },
-            {
-              "dimensionName": "倾听能力",
-              "score": "80/100",
-              "percentage": "80%"
-            }
-          ],
-          "coreConclusions": {
-            "improvementDirection": "表达能力",
-            "yourStrengths": "倾听能力"
-          },
-          "inDepthAnalysis": {
-            "overallAnalysis": "沟通能力总体得分为60/100，属于中等水平且表现不均衡。倾听能力较为突出（80/100），但在表达能力和冲突处理能力上存在明显不足（分别为40/100和60/100），需针对性提升以实现沟通能力的全面进步。",
-            "communicationStyle": "呈现出以倾听为核心的沟通风格，在沟通过程中更注重理解对方观点与需求，但表达能力较弱，容易在需要主动传递信息、推动决策或表达个人立场时存在不足，沟通时可能偏向接收性沟通而相对缺乏主动性表达的意识。",
-            "personalizedSuggestions": "针对表达能力这一改进方向，建议通过每日结构化表达练习（如撰写简短观点陈述并优化语言）、主动参与团队讨论并分享想法、学习清晰表达逻辑与重点的方法，同时结合倾听优势，在沟通中先充分理解对方后再表达，提升表达有效性；在冲突处理时，利用倾听技巧先共情再表达观点，平衡表达与倾听的关系。",
-            "potentialChallenges": [
-              "在团队协作、项目推进等场景中，因表达能力不足导致想法传递不清，影响工作推进效率；",
-              "处理冲突时，若表达不清或缺乏针对性，可能加剧双方误解或矛盾，难以有效解决冲突；",
-              "在需要主动建立关系、说服他人或推动变革的沟通场景中，因表达能力较弱而显得被动，难以高效达成沟通目标。"
-            ],
-            "developmentPlan": {
-              "shortTermActionPlan": [
-                "每日进行3分钟结构化表达练习，录制自己陈述观点后回听优化语言与逻辑；",
-                "主动参与小组讨论，每周至少1次主动分享想法并接受反馈；",
-                "学习表达技巧如“三分钟原则”（用3分钟清晰阐述核心观点），提升表达简洁性与有效性。"
-              ],
-              "longTermDevelopmentSuggestions": [
-                "系统学习专业沟通与演讲课程，掌握结构化表达、公开演讲等技能；",
-                "定期回顾冲突处理与表达能力相关的实际场景，制定改进计划并执行；",
-                "建立长期表达练习机制，如每月参与公开演讲活动，持续提升表达能力。"
-              ]
-            },
-            "nextStepActionSuggestions": [
-              {
-                "actionName": "AI对话练习",
-                "actionDescription": "在模拟场景中练习和提升你的沟通技巧",
-                "actionButton": "开始练习"
-              },
-              {
-                "actionName": "学习知识库",
-                "actionDescription": "阅读专业的沟通技巧文章，深入学习",
-                "actionButton": "浏览文章"
-              },
-              {
-                "actionName": "跟踪进度",
-                "actionDescription": "查看你的学习进度和能力提升情况",
-                "actionButton": "查看进度"
-              }
-            ]
-    }}
-    
+### Requirements
+- The JSON structure must strictly match the following example format (fields and hierarchy are exactly the same):
+{
+  "overallScore": {
+    "score": 6,
+    "percentage": 40,
+    "overallEvaluation": "Your overall communication skills need significant improvement"
+  },
+  "dimensionScores": [
+    {
+      "dimensionName": "Clarity of Expression",
+      "score": 1,
+      "percentage": 20
+    },
+    {
+      "dimensionName": "Constructive Communication",
+      "score": 2,
+      "percentage": 40
+    },
+    {
+      "dimensionName": "Listening Ability",
+      "score": 3,
+      "percentage": 60
     }
-  `
+  ],
+  "coreConclusions": {
+    "improvementDirection": "Focus on improving clarity of expression and constructive communication skills",
+    "yourStrengths": "Listening ability has reached a basic level, and you can maintain basic focus"
+  },
+  "in-depthAnalysis": {
+    "overallAnalysis": "The overall score is low (6 points, 40%). Clarity of expression (20%) and constructive communication (40%) are obvious weaknesses. Listening ability is at a general level (60%). The score distribution is unbalanced, and there is significant room for improvement in core communication skills.",
+    "communicationStyle": "Your communication style tends to be passive: It's difficult to express opinions clearly in meetings, and there is a lack of respect and constructive feedback when there are differences of opinion. However, you can maintain basic listening focus and do not frequently interrupt others.",
+    "personalizedSuggestions": "1. Strengthen your listening strength: Actively record the other party's views during communication to improve the completeness of information reception. 2. Address your expression weakness: Prepare a 100-word outline of your views before each meeting to practice logical presentation. 3. Improve constructive communication: When you have different opinions, first use the sentence pattern \"I understand your point is..., and my supplement is...\" to respond.",
+    "potentialChallenges": [
+      "Unclear expression in meetings may lead the team to misunderstand your work ideas.",
+      "Lack of constructive responses during disagreements may lead to unnecessary conflicts.",
+      "Long-term expression weaknesses may affect your professional influence."
+    ],
+    "developmentPlan": {
+      "short-term": "Within the next 2 weeks, spend 10 minutes each day practicing outlining meeting views (including \"core point + 2 supporting details\").",
+      "long-term": "Within 1 month, attend an offline training on \"Structured Expression and Constructive Communication\" to systematically improve core skills."
+    },
+    "nextStepActionSuggestions": [
+      {
+        "actionName": "Create an Expression Practice Plan",
+        "actionDescription": "Write an outline of your views for tomorrow's meeting based on the structure of \"core point + 2 supporting details\".",
+        "actionButton": "Immediately Create Practice Plan"
+      },
+      {
+        "actionName": "Learn Constructive Communication Sentence Patterns",
+        "actionDescription": "Memorize and try to use the \"understand + supplement\" response sentence pattern, and record 1 practice scenario.",
+        "actionButton": "Start Sentence Pattern Practice"
+      }
+    ]
+  }
+}
+- Content must be fully based on background information, avoiding subjective assumptions.
+- Suggestions must be actionable, challenges must be scenario-based, and plans must be phased.
 
-      // 调用大模型
-      const response = await openaiClient.chat.completions.create({
-        model: "THUDM/GLM-Z1-9B-0414",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          }
-        ],
-        stream: false,
-        max_tokens: 4096,
-        temperature: 0.7,
-      });
+### Output Format
+Standard JSON, with fields exactly matching the above example. Ensure the return is plain text that can be formatted, without any other irrelevant text.
+       `
 
-      // 解析大模型返回的结果
-      const fullResult = JSON.parse(
-        response.choices[0].message.content || "{}"
-      );
+      // 调用大模型，带重试机制
+      const { fullResult, analysisResult } = await callModelWithRetry(prompt);
 
-      // 提取 inDepthAnalysis 部分作为 modelAnalysis
-      const analysisResult: ModelAnalysisResult = fullResult.inDepthAnalysis || {};
-
+      // 设置模型分析结果
       setModelAnalysis(analysisResult);
+
+      // 从大模型返回中提取评估结果
+      const assessmentResult: AssessmentResult = {
+        overallScore: fullResult.overallScore?.percentage || 0,
+        categoryScores: fullResult.dimensionScores?.reduce((acc: any, dimension: any) => {
+          acc[dimension.dimensionName] = dimension.percentage;
+          return acc;
+        }, {}) || {},
+        feedback: fullResult.overallScore?.overallEvaluation || "",
+        improvementAreas: fullResult.coreConclusions?.improvementDirection ? [fullResult.coreConclusions.improvementDirection] : [],
+        strengths: fullResult.coreConclusions?.yourStrengths ? [fullResult.coreConclusions.yourStrengths] : []
+      };
+      setResult(assessmentResult);
+
+      // 保存到本地存储（在实际应用中，这里应该调用API保存到服务器）
+      const savedResults = 
+        localStorage.getItem("communication_assessments") || "[]";
+      const results = JSON.parse(savedResults);
+      results.push({
+        timestamp: new Date().toISOString(),
+        result: assessmentResult,
+        modelAnalysis: analysisResult
+      });
+      localStorage.setItem(
+        "communication_assessments",
+        JSON.stringify(results)
+      );
     } catch (error) {
-      console.error("大模型调用失败:", error);
-      // 可以添加错误处理逻辑
+      console.error("所有大模型调用尝试都失败了:", error);
+      // 大模型调用失败时，设置默认评估结果
+      const assessmentResult: AssessmentResult = {
+        overallScore: 0,
+        categoryScores: {},
+        feedback: "评估失败，请稍后重试",
+        improvementAreas: [],
+        strengths: []
+      };
+      setResult(assessmentResult);
+      
+      // 保存到本地存储
+      const savedResults = 
+        localStorage.getItem("communication_assessments") || "[]";
+      const results = JSON.parse(savedResults);
+      results.push({
+        timestamp: new Date().toISOString(),
+        result: assessmentResult
+      });
+      localStorage.setItem(
+        "communication_assessments",
+        JSON.stringify(results)
+      );
     } finally {
+      setIsSubmitting(false);
       setIsAnalyzing(false);
     }
   };
@@ -512,7 +529,16 @@ export default function AssessmentPage() {
     setCurrentStep(0);
     setAnswers({});
     setResult(null);
-    setModelAnalysis(null);
+    setModelAnalysis({
+      overallAnalysis: "",
+      personalizedSuggestions: "",
+      communicationStyle: "",
+      potentialChallenges: [],
+      developmentPlan: {
+        shortTerm: [],
+        longTerm: []
+      }
+    });
   };
 
   // 当前问题
@@ -932,7 +958,7 @@ export default function AssessmentPage() {
                     theme === "dark" ? "text-gray-300" : "text-gray-700"
                   )}
                 >
-                  {modelAnalysis.personalizedAdvice}
+                  {modelAnalysis.personalizedSuggestions}
                 </p>
               </motion.div>
 
