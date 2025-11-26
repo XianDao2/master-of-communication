@@ -208,8 +208,6 @@ const ScoreDisplay: React.FC<{ score: number; maxScore?: number }> = ({
   );
 };
 
-
-
 export default function AssessmentPage() {
   const { theme } = useTheme();
   const { user } = useUser();
@@ -223,8 +221,8 @@ export default function AssessmentPage() {
     potentialChallenges: [],
     developmentPlan: {
       shortTerm: [],
-      longTerm: []
-    }
+      longTerm: [],
+    },
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -262,7 +260,11 @@ export default function AssessmentPage() {
   };
 
   // 大模型调用函数，带重试机制
-  const callModelWithRetry = async (prompt: string, maxRetries = 3, retryDelay = 2000): Promise<{ fullResult: any; analysisResult: ModelAnalysisResult }> => {
+  const callModelWithRetry = async (
+    prompt: string,
+    maxRetries = 3,
+    retryDelay = 2000
+  ): Promise<{ fullResult: any; analysisResult: ModelAnalysisResult }> => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         // 调用大模型
@@ -272,20 +274,18 @@ export default function AssessmentPage() {
             {
               role: "user",
               content: prompt,
-            }
+            },
           ],
           stream: false,
           max_tokens: 4096,
           temperature: 0.7,
         });
-
+        const analysisResultw = response.choices[0].message.content || "{}";
+        const cleanContent = analysisResultw.replace(/```json|```/g, "").trim();
+        const fullResult = JSON.parse(cleanContent);
         // 解析大模型返回的结果
-        const fullResult = JSON.parse(
-          response.choices[0].message.content || "{}"
-        );
-
-        // 提取分析部分作为 modelAnalysis，并进行字段映射
-        const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+        const analysis =
+          fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
         const analysisResult: ModelAnalysisResult = {
           overallAnalysis: analysis.overallAnalysis || "",
           personalizedSuggestions: analysis.personalizedSuggestions || "",
@@ -294,43 +294,51 @@ export default function AssessmentPage() {
           developmentPlan: {
             shortTerm: (() => {
               // 检查是否存在depthAnalysis字段（用户提到的），如果不存在则使用inDepthAnalysis
-              const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+              const analysis =
+                fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
               const plan = analysis.developmentPlan;
               if (!plan) return [];
               const shortTerm = plan["short-term"];
-              return typeof shortTerm === "string" ? [shortTerm] : (shortTerm || []);
+              return typeof shortTerm === "string"
+                ? [shortTerm]
+                : shortTerm || [];
             })(),
             longTerm: (() => {
               // 检查是否存在depthAnalysis字段（用户提到的），如果不存在则使用inDepthAnalysis
-              const analysis = fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
+              const analysis =
+                fullResult.depthAnalysis || fullResult.inDepthAnalysis || {};
               const plan = analysis.developmentPlan;
               if (!plan) return [];
               const longTerm = plan["long-term"];
-              return typeof longTerm === "string" ? [longTerm] : (longTerm || []);
-            })()
-          }
+              return typeof longTerm === "string" ? [longTerm] : longTerm || [];
+            })(),
+          },
         };
 
         // 检查是否获取到了有效的分析结果
-        if (analysisResult.overallAnalysis || analysisResult.communicationStyle || fullResult.overallScore) {
+        if (
+          analysisResult.overallAnalysis ||
+          analysisResult.communicationStyle ||
+          fullResult.overallScore
+        ) {
           return { fullResult, analysisResult };
         }
 
         throw new Error("未获取到有效的分析结果");
       } catch (error) {
         console.error(`大模型调用失败 (尝试 ${attempt}/${maxRetries}):`, error);
-        
+
         // 如果不是最后一次尝试，等待后重试
         if (attempt < maxRetries) {
           console.log(`等待 ${retryDelay}ms 后重试...`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
         } else {
           // 最后一次尝试失败，抛出错误
           throw error;
         }
       }
     }
-    
+
     // 理论上不会到达这里，但为了类型安全返回一个默认值
     return {
       fullResult: {},
@@ -341,9 +349,9 @@ export default function AssessmentPage() {
         potentialChallenges: [],
         developmentPlan: {
           shortTerm: [],
-          longTerm: []
-        }
-      }
+          longTerm: [],
+        },
+      },
     };
   };
 
@@ -355,23 +363,32 @@ export default function AssessmentPage() {
     try {
       // 准备发送给大模型的提示信息
       // 构建用户选择的详细信息
-      const userSelections = Object.entries(answers).map(([questionId, selectedValue]) => {
-        // 将字符串类型的ID和值转换为数字类型，以匹配Question接口定义
-        const questionIdNum = parseInt(questionId, 10);
-        const selectedValueNum = parseInt(selectedValue, 10);
-        
-        const question = questions.find(q => q.id === questionIdNum);
-        const selectedOption = question?.options.find(opt => opt.value === selectedValueNum);
-        
-        return {
-          questionId: questionIdNum,
-          questionText: question?.text || 'Unknown Question',
-          selectedValue: selectedValueNum,
-          selectedOptionText: selectedOption?.text || 'Unknown Option'
-        };
-      });
-      const questionsMatch = userSelections.map(selection => `- 问题${selection.questionId}: ${selection.questionText}\n  选择: ${selection.selectedOptionText} (值: ${selection.selectedValue})`).join('\n        ');
-      
+      const userSelections = Object.entries(answers).map(
+        ([questionId, selectedValue]) => {
+          // 将字符串类型的ID和值转换为数字类型，以匹配Question接口定义
+          const questionIdNum = parseInt(questionId, 10);
+          const selectedValueNum = parseInt(selectedValue, 10);
+
+          const question = questions.find((q) => q.id === questionIdNum);
+          const selectedOption = question?.options.find(
+            (opt) => opt.value === selectedValueNum
+          );
+
+          return {
+            questionId: questionIdNum,
+            questionText: question?.text || "Unknown Question",
+            selectedValue: selectedValueNum,
+            selectedOptionText: selectedOption?.text || "Unknown Option",
+          };
+        }
+      );
+      const questionsMatch = userSelections
+        .map(
+          (selection) =>
+            `- 问题${selection.questionId}: ${selection.questionText}\n  选择: ${selection.selectedOptionText} (值: ${selection.selectedValue})`
+        )
+        .join("\n        ");
+
       console.log(questionsMatch);
       const prompt = `
       You are a professional communication skills analysis expert, specialized in providing in-depth analysis and personalized suggestions based on communication skills assessment results.
@@ -460,35 +477,39 @@ Based on the above assessment results, generate a standard JSON output according
 
 ### Output Format
 Standard JSON, with fields exactly matching the above example. Ensure the return is plain text that can be formatted, without any other irrelevant text.
-       `
+       `;
 
       // 调用大模型，带重试机制
       const { fullResult, analysisResult } = await callModelWithRetry(prompt);
-
       // 设置模型分析结果
       setModelAnalysis(analysisResult);
 
       // 从大模型返回中提取评估结果
       const assessmentResult: AssessmentResult = {
         overallScore: fullResult.overallScore?.percentage || 0,
-        categoryScores: fullResult.dimensionScores?.reduce((acc: any, dimension: any) => {
-          acc[dimension.dimensionName] = dimension.percentage;
-          return acc;
-        }, {}) || {},
+        categoryScores:
+          fullResult.dimensionScores?.reduce((acc: any, dimension: any) => {
+            acc[dimension.dimensionName] = dimension.percentage;
+            return acc;
+          }, {}) || {},
         feedback: fullResult.overallScore?.overallEvaluation || "",
-        improvementAreas: fullResult.coreConclusions?.improvementDirection ? [fullResult.coreConclusions.improvementDirection] : [],
-        strengths: fullResult.coreConclusions?.yourStrengths ? [fullResult.coreConclusions.yourStrengths] : []
+        improvementAreas: fullResult.coreConclusions?.improvementDirection
+          ? [fullResult.coreConclusions.improvementDirection]
+          : [],
+        strengths: fullResult.coreConclusions?.yourStrengths
+          ? [fullResult.coreConclusions.yourStrengths]
+          : [],
       };
       setResult(assessmentResult);
 
       // 保存到本地存储（在实际应用中，这里应该调用API保存到服务器）
-      const savedResults = 
+      const savedResults =
         localStorage.getItem("communication_assessments") || "[]";
       const results = JSON.parse(savedResults);
       results.push({
         timestamp: new Date().toISOString(),
         result: assessmentResult,
-        modelAnalysis: analysisResult
+        modelAnalysis: analysisResult,
       });
       localStorage.setItem(
         "communication_assessments",
@@ -502,17 +523,17 @@ Standard JSON, with fields exactly matching the above example. Ensure the return
         categoryScores: {},
         feedback: "评估失败，请稍后重试",
         improvementAreas: [],
-        strengths: []
+        strengths: [],
       };
       setResult(assessmentResult);
-      
+
       // 保存到本地存储
-      const savedResults = 
+      const savedResults =
         localStorage.getItem("communication_assessments") || "[]";
       const results = JSON.parse(savedResults);
       results.push({
         timestamp: new Date().toISOString(),
-        result: assessmentResult
+        result: assessmentResult,
       });
       localStorage.setItem(
         "communication_assessments",
@@ -536,8 +557,8 @@ Standard JSON, with fields exactly matching the above example. Ensure the return
       potentialChallenges: [],
       developmentPlan: {
         shortTerm: [],
-        longTerm: []
-      }
+        longTerm: [],
+      },
     });
   };
 
