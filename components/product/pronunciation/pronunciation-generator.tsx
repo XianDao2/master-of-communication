@@ -167,7 +167,7 @@ Note: For longer sentences, focus on the core words for pronunciation matching. 
       }
 
       const response = await client.chat.completions.create({
-        model: "THUDM/GLM-4.1V-9B-Thinking",
+        model: "THUDM/GLM-Z1-9B-0414",
         messages: [
           {
             role: "user",

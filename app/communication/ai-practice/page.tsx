@@ -988,7 +988,7 @@ export default function AIPracticePage() {
       `;
 
       const response = await client.chat.completions.create({
-        model: "THUDM/GLM-4.1V-9B-Thinking",
+        model: "THUDM/GLM-Z1-9B-0414",
         messages: [{ role: "system", content: "你是一位专业的沟通顾问，擅长分析和评价沟通质量。" },
                   { role: "user", content: prompt }],
         temperature: 0.3,
@@ -1262,7 +1262,7 @@ export default function AIPracticePage() {
       `;
 
       const response = await client.chat.completions.create({
-        model: "THUDM/GLM-4.1V-9B-Thinking",
+        model: "THUDM/GLM-Z1-9B-0414",
         messages: [{ role: "system", content: "你是一位专业的沟通顾问，擅长分析完整对话的沟通质量。" },
                   { role: "user", content: prompt }],
         temperature: 0.3,
