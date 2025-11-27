@@ -94,7 +94,10 @@ interface MessageAnalysis {
   logicalStructure: number;
   communicationEffectiveness: number;
   empathy: number;
+  informationCompleteness: number;
   suggestions: string[];
+  strengths: string[];
+  communicationStyle: string;
   improvementSuggestions?: string[];
   feedback?: string; // AI生成的综合反馈
   suggestedResponses?: SuggestedResponse[]; // AI生成的建议响应
@@ -345,11 +348,16 @@ const OptimalResponsePanel: React.FC<{
   );
 };
 
+// 导入 ECharts 相关库
+import ReactECharts from 'echarts-for-react';
+
 // MessageAnalysisPanel 组件 - 消息分析面板
 const MessageAnalysisPanel: React.FC<{
   analysis: MessageAnalysis;
   theme: 'light' | 'dark';
-}> = ({ analysis, theme }) => {
+  onCopySuggestion?: (suggestion: SuggestedResponse) => void;
+  onApplyOptimalResponse?: () => void;
+}> = ({ analysis, theme, onCopySuggestion, onApplyOptimalResponse }) => {
   const getScoreLabel = (score: number) => {
     if (score >= 4) return '优秀';
     if (score >= 3) return '良好';
@@ -357,11 +365,92 @@ const MessageAnalysisPanel: React.FC<{
     return '待提升';
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 4) return 'bg-green-500';
-    if (score >= 3) return 'bg-yellow-500';
-    if (score >= 2) return 'bg-orange-500';
-    return 'bg-red-500';
+  // 雷达图数据
+  const radarData = [
+    { name: '语言表达', value: analysis.languageExpression, color: '#3b82f6' },
+    { name: '情绪管理', value: analysis.emotionalManagement, color: '#8b5cf6' },
+    { name: '逻辑结构', value: analysis.logicalStructure, color: '#10b981' },
+    { name: '共情能力', value: analysis.empathy, color: '#f59e0b' },
+    { name: '沟通效果', value: analysis.communicationEffectiveness, color: '#ef4444' },
+    { name: '信息完整', value: analysis.informationCompleteness, color: '#06b6d4' },
+  ];
+
+  // 配置 ECharts 雷达图
+  const radarOption = {
+    backgroundColor: 'transparent',
+    radar: {
+      indicator: radarData.map(item => ({
+        name: item.name,
+        max: 5,
+        color: item.color
+      })),
+      shape: 'polygon',
+      splitNumber: 5,
+      axisName: {
+        color: theme === 'dark' ? '#ccc' : '#333',
+        fontSize: 12
+      },
+      splitLine: {
+        lineStyle: {
+          color: theme === 'dark' ? '#444' : '#e0e0e0'
+        }
+      },
+      splitArea: {
+        show: true,
+        areaStyle: {
+          color: theme === 'dark' ? ['rgba(255, 255, 255, 0.03)', 'rgba(255, 255, 255, 0.05)'] : ['rgba(255, 255, 255, 0.8)', 'rgba(255, 255, 255, 0.6)']
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          color: theme === 'dark' ? '#666' : '#999'
+        }
+      }
+    },
+    series: [
+      {
+        name: '沟通质量评分',
+        type: 'radar',
+        data: [
+          {
+            value: radarData.map(item => item.value),
+            name: '评分',
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: {
+              color: '#3b82f6',
+              width: 2
+            },
+            areaStyle: {
+              color: {
+                type: 'radial',
+                x: 0.5,
+                y: 0.5,
+                r: 0.5,
+                colorStops: [
+                  { offset: 0, color: 'rgba(59, 130, 246, 0.5)' },
+                  { offset: 1, color: 'rgba(59, 130, 246, 0.1)' }
+                ]
+              }
+            },
+            itemStyle: {
+              color: '#3b82f6'
+            }
+          }
+        ]
+      }
+    ],
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.name}: ${params.value}分 (${getScoreLabel(params.value)})`;
+      },
+      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#3b82f6',
+      textStyle: {
+        color: theme === 'dark' ? '#fff' : '#333'
+      }
+    }
   };
 
   return (
@@ -371,59 +460,52 @@ const MessageAnalysisPanel: React.FC<{
           <p className="italic">{analysis.feedback}</p>
         </div>
       )}
-      <div className="space-y-6">
-        <div>
-          <h4 className="font-semibold mb-3">语言表达</h4>
-          <div className="flex items-center gap-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full ${getScoreColor(analysis.languageExpression)}`}
-                style={{ width: `${(analysis.languageExpression / 5) * 100}%` }}
-              ></div>
-            </div>
-            <span className="font-medium w-16 text-center">{getScoreLabel(analysis.languageExpression)}</span>
-          </div>
+
+      {/* 沟通风格 */}
+      {analysis.communicationStyle && (
+        <div className={`mb-6 p-4 rounded-lg border ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800 text-purple-300' : 'bg-purple-50 border-purple-100 text-purple-800'}`}>
+          <h4 className="font-semibold mb-2">沟通风格</h4>
+          <p>{analysis.communicationStyle}</p>
         </div>
-        
-        <div>
-          <h4 className="font-semibold mb-3">情绪管理</h4>
-          <div className="flex items-center gap-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full ${getScoreColor(analysis.emotionalManagement)}`}
-                style={{ width: `${(analysis.emotionalManagement / 5) * 100}%` }}
-              ></div>
-            </div>
-            <span className="font-medium w-16 text-center">{getScoreLabel(analysis.emotionalManagement)}</span>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-3">逻辑结构</h4>
-          <div className="flex items-center gap-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full ${getScoreColor(analysis.logicalStructure)}`}
-                style={{ width: `${(analysis.logicalStructure / 5) * 100}%` }}
-              ></div>
-            </div>
-            <span className="font-medium w-16 text-center">{getScoreLabel(analysis.logicalStructure)}</span>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-3">共情能力</h4>
-          <div className="flex items-center gap-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full ${getScoreColor(analysis.empathy)}`}
-                style={{ width: `${(analysis.empathy / 5) * 100}%` }}
-              ></div>
-            </div>
-            <span className="font-medium w-16 text-center">{getScoreLabel(analysis.empathy)}</span>
-          </div>
+      )}
+
+      {/* ECharts 雷达图 */}
+      <div className="mb-6">
+        <h4 className="font-semibold mb-3">多维度评分</h4>
+        <div className="h-80 w-full">
+          <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
         </div>
       </div>
+
+      {/* 优点 */}
+      {analysis.strengths && analysis.strengths.length > 0 && (
+        <div className={`mb-6 p-4 rounded-lg border ${theme === 'dark' ? 'bg-green-900/20 border-green-800 text-green-300' : 'bg-green-50 border-green-100 text-green-800'}`}>
+          <h4 className="font-semibold mb-3">优点</h4>
+          <ul className="space-y-2">
+            {analysis.strengths.map((strength, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <span>{strength}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 改进建议 */}
+      {analysis.suggestions && analysis.suggestions.length > 0 && (
+        <div className={`mb-6 p-4 rounded-lg border ${theme === 'dark' ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' : 'bg-yellow-50 border-yellow-100 text-yellow-800'}`}>
+          <h4 className="font-semibold mb-3">改进建议</h4>
+          <ul className="space-y-2">
+            {analysis.suggestions.map((suggestion, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-yellow-500 mt-1">→</span>
+                <span>{suggestion}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
@@ -632,36 +714,7 @@ const ScoreDetails = ({ analysis }: { analysis: MessageAnalysis }) => {
 
 // ImprovementSuggestions组件已在文件顶部定义，这里不再重复定义
 
-// 模拟AI响应函数
-const simulateAIResponse = (message: string, scenario: Scenario): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // 基于场景的简单响应逻辑
-      if (scenario.id === '1') {
-        // 工作汇报场景
-        if (message.includes('完成') || message.includes('进度')) {
-          resolve('很好，你清晰地描述了项目进展。接下来，请具体说明你遇到的挑战和解决方案。');
-        } else if (message.includes('挑战') || message.includes('困难')) {
-          resolve('感谢你坦诚分享遇到的挑战。你是如何克服这些困难的？能否提供一些具体的例子？');
-        } else {
-          resolve('请继续详细说明你的工作内容，特别是关键成果和下一步计划。');
-        }
-      } else if (scenario.id === '2') {
-        // 客户谈判场景
-        if (message.includes('价格') || message.includes('优惠')) {
-          resolve('我们理解您对价格的关注。能否分享一下您的预算范围，这样我们可以提供更符合您需求的方案？');
-        } else if (message.includes('需求') || message.includes('要求')) {
-          resolve('您提出的需求非常明确。我们可以针对这些需求定制解决方案，同时兼顾成本效益。');
-        } else {
-          resolve('作为客户，您最关心的是产品的哪些方面？质量、价格还是售后服务？');
-        }
-      } else {
-        // 通用响应
-        resolve(`基于${scenario.title}场景，我觉得您的回答可以更加具体一些。请尝试提供更多细节。`);
-      }
-    }, 1000 + Math.random() * 1000); // 模拟思考时间
-  });
-};
+
 
 // 计算总体分析
 const calculateOverallAnalysis = (messages: Message[]) => {
@@ -986,12 +1039,13 @@ export default function AIPracticePage() {
       }).join('\n');
       
       const prompt = `
-        分析以下用户消息的沟通质量，从以下五个维度进行评分（1-5分，1分最差，5分最好）：
+        分析以下用户消息的沟通质量，从以下六个维度进行评分（1-5分，1分最差，5分最好）：
         1. 语言表达：评估语言的清晰度、准确性和专业性
         2. 情绪管理：评估情绪表达的适当性和控制能力
         3. 逻辑结构：评估内容的组织和逻辑连贯性
         4. 共情能力：评估对对方立场的理解和认同
         5. 沟通效果：综合评估消息达成预期目标的有效性
+        6. 信息完整性：评估提供的信息是否完整、充分
         
         沟通场景：${scenario.title}
         场景描述：${scenario.description}
@@ -1007,8 +1061,11 @@ export default function AIPracticePage() {
         - logicalStructure: 逻辑结构评分（1-5）
         - empathy: 共情能力评分（1-5）
         - communicationEffectiveness: 沟通效果评分（1-5）
-        - feedback: 对消息的简短评价（100字以内）
-        - suggestions: 2-3条改进建议
+        - informationCompleteness: 信息完整性评分（1-5）
+        - feedback: 对消息的简短评价（150字以内）
+        - suggestions: 3-4条具体的改进建议
+        - strengths: 2-3条消息中的优点
+        - communicationStyle: 对用户沟通风格的简短描述（50字以内）
         - suggestedResponses: 3条建议的响应，每条包含以下字段：
           - id: 唯一标识符（字符串）
           - content: 建议的响应内容
@@ -1041,8 +1098,11 @@ export default function AIPracticePage() {
         logicalStructure: Math.floor(Math.random() * 3) + 3,
         empathy: Math.floor(Math.random() * 3) + 3,
         communicationEffectiveness: Math.floor(Math.random() * 3) + 3,
+        informationCompleteness: Math.floor(Math.random() * 3) + 3,
         feedback: "分析过程中出现错误，使用默认评价。",
         suggestions: ["继续保持良好的沟通风格", "尝试在适当的场合使用更丰富的表达方式"],
+        strengths: ["基本的沟通能力", "积极参与对话"],
+        communicationStyle: "直接型沟通风格",
         suggestedResponses: [
           {
             id: "default-1",
@@ -1171,8 +1231,8 @@ export default function AIPracticePage() {
       timestamp: new Date()
     };
     
-    // 保存当前消息列表作为历史对话（在添加新消息之前）
-    const currentHistory = [...messages];
+    // 保存当前消息列表并添加新的用户消息作为历史对话
+    const currentHistory = [...messages, userMessage];
     
     // 清空输入框并添加用户消息
     setMessages(prev => [...prev, userMessage]);
@@ -1190,7 +1250,7 @@ export default function AIPracticePage() {
       // 生成消息分析 - 使用大模型进行实时分析
       setIsAnalyzing(true);
       
-      // 调用大模型分析消息，传入历史对话
+      // 调用大模型分析消息，传入包含当前用户消息的完整历史对话
       const aiAnalysis = await analyzeMessage(newMessage, selectedScenario, currentHistory);
       
       // 为用户消息生成分析数据
@@ -1234,8 +1294,33 @@ export default function AIPracticePage() {
         setSuggestedResponses(generateSuggestedResponses(newMessage, selectedScenario));
       }
 
-      // 获取AI响应
-      const aiResponse = await simulateAIResponse(newMessage, selectedScenario);
+      // 使用大模型生成AI响应
+      const client = getOpenAIClient();
+      const aiResponsePrompt = `
+        基于以下对话历史和当前用户消息，生成一个自然、合适的AI响应：
+        
+        沟通场景：${selectedScenario.title}
+        场景描述：${selectedScenario.description}
+        
+        对话历史：
+        ${currentHistory.map((msg, index) => {
+          const role = msg.sender === 'user' ? '用户' : 'AI';
+          return `${index + 1}. ${role}：${msg.content}`;
+        }).join('\n')}
+        
+        请以自然、友好的语言生成AI响应，保持对话的流畅性和相关性。
+        不要返回任何JSON格式或其他结构化数据，只返回纯文本响应。
+      `;
+      
+      const aiResponseResult = await client.chat.completions.create({
+        model: "THUDM/GLM-Z1-9B-0414",
+        messages: [{ role: "system", content: "你是一位专业的沟通伙伴，擅长根据不同场景和对话历史生成自然、合适的响应。" },
+                  { role: "user", content: aiResponsePrompt }],
+        temperature: 0.7,
+      });
+      
+      const aiResponse = aiResponseResult.choices[0].message.content || "我理解你的意思。";
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: aiResponse,
