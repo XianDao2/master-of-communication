@@ -1365,6 +1365,9 @@ export default function AIPracticePage() {
   const endConversation = async () => {
     let conversationAnalysis = null;
     
+    // 立即切换到分析页面，显示加载状态
+    setCurrentView('analysis');
+    
     // 如果有对话内容和选定的场景，分析整个对话
     if (messages.length > 0 && selectedScenario) {
       setIsAnalyzing(true);
@@ -1375,8 +1378,6 @@ export default function AIPracticePage() {
     
     // 保存练习记录到进度系统，传入大模型分析结果
     savePracticeRecord(conversationAnalysis);
-    
-    setCurrentView('analysis');
   };
   
   // 保存练习记录到进度系统
