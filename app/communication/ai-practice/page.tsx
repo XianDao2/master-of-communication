@@ -111,6 +111,7 @@ interface ConversationAnalysis {
   strengths: string[];
   weaknesses: string[];
   summary: string;
+  suggestions: string[];
 }
 
 // ConversationAnalysisSummary 组件 - 对话分析结果展示
@@ -184,7 +185,7 @@ const ConversationAnalysisSummary: React.FC<{ analysis: ConversationAnalysis | n
       </div>
 
       {/* 优缺点分析 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* 优点 */}
         <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
           <h4 className="text-lg font-semibold mb-3 flex items-center text-gray-700 dark:text-gray-200">
@@ -208,6 +209,18 @@ const ConversationAnalysisSummary: React.FC<{ analysis: ConversationAnalysis | n
             ))}
           </ul>
         </div>
+      </div>
+
+      {/* 总体改进建议 */}
+      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+        <h4 className="text-lg font-semibold mb-3 flex items-center text-gray-700 dark:text-gray-200">
+          <span className="mr-2">💡</span> 总体改进建议
+        </h4>
+        <ul className="list-disc pl-6 space-y-1 text-gray-600 dark:text-gray-300">
+          {analysis.suggestions.map((suggestion, index) => (
+            <li key={index}>{suggestion}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -1342,7 +1355,8 @@ export default function AIPracticePage() {
         communicationStrategy: Math.floor(Math.random() * 2) + 3,
         strengths: [],
         weaknesses: [],
-        summary: ""
+        summary: "",
+        suggestions: []
       };
     }
   };
