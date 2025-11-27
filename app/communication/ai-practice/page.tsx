@@ -97,6 +97,7 @@ interface MessageAnalysis {
   suggestions: string[];
   improvementSuggestions?: string[];
   feedback?: string; // AI生成的综合反馈
+  suggestedResponses?: SuggestedResponse[]; // AI生成的建议响应
 }
 
 // 定义对话分析接口
@@ -961,9 +962,15 @@ export default function AIPracticePage() {
   };
 
   // 使用大模型分析消息的沟通评价
-  const analyzeMessage = async (message: string, scenario: Scenario): Promise<any> => {
+  const analyzeMessage = async (message: string, scenario: Scenario, history: Message[]): Promise<any> => {
     try {
       const client = getOpenAIClient();
+      
+      // 格式化历史对话
+      const formattedHistory = history.map((msg, index) => {
+        const role = msg.sender === 'user' ? '用户' : 'AI';
+        return `${index + 1}. ${role}：${msg.content}`;
+      }).join('\n');
       
       const prompt = `
         分析以下用户消息的沟通质量，从以下五个维度进行评分（1-5分，1分最差，5分最好）：
@@ -973,9 +980,13 @@ export default function AIPracticePage() {
         4. 共情能力：评估对对方立场的理解和认同
         5. 沟通效果：综合评估消息达成预期目标的有效性
         
-        消息内容："${message}"
         沟通场景：${scenario.title}
         场景描述：${scenario.description}
+        
+        历史对话：
+        ${formattedHistory}
+        
+        当前消息："${message}"
         
         请以JSON格式返回分析结果，包含以下字段：
         - languageExpression: 语言表达评分（1-5）
@@ -985,6 +996,14 @@ export default function AIPracticePage() {
         - communicationEffectiveness: 沟通效果评分（1-5）
         - feedback: 对消息的简短评价（100字以内）
         - suggestions: 2-3条改进建议
+        - suggestedResponses: 3条建议的响应，每条包含以下字段：
+          - id: 唯一标识符（字符串）
+          - content: 建议的响应内容
+          - style: 响应风格（direct/indirect/humorous）
+          - effectiveness: 预期效果评分（1-5）
+          - emotionalTransmission: 情绪传递评分（1-5）
+          - informationCompleteness: 信息完整性评分（1-5）
+          - reason: 推荐理由
       `;
 
       const response = await client.chat.completions.create({
@@ -1010,7 +1029,36 @@ export default function AIPracticePage() {
         empathy: Math.floor(Math.random() * 3) + 3,
         communicationEffectiveness: Math.floor(Math.random() * 3) + 3,
         feedback: "分析过程中出现错误，使用默认评价。",
-        suggestions: ["继续保持良好的沟通风格", "尝试在适当的场合使用更丰富的表达方式"]
+        suggestions: ["继续保持良好的沟通风格", "尝试在适当的场合使用更丰富的表达方式"],
+        suggestedResponses: [
+          {
+            id: "default-1",
+            content: "这是一个默认的直接响应示例。",
+            style: "direct",
+            effectiveness: 4,
+            emotionalTransmission: 3,
+            informationCompleteness: 4,
+            reason: "默认直接响应，清晰明了"
+          },
+          {
+            id: "default-2",
+            content: "或许我们可以考虑一下这个问题的其他方面。",
+            style: "indirect",
+            effectiveness: 3,
+            emotionalTransmission: 4,
+            informationCompleteness: 3,
+            reason: "默认间接响应，委婉表达"
+          },
+          {
+            id: "default-3",
+            content: "哈哈，这个问题很有趣，让我来想想！",
+            style: "humorous",
+            effectiveness: 3,
+            emotionalTransmission: 5,
+            informationCompleteness: 3,
+            reason: "默认幽默响应，活跃气氛"
+          }
+        ]
       };
     }
   };
@@ -1110,6 +1158,9 @@ export default function AIPracticePage() {
       timestamp: new Date()
     };
     
+    // 保存当前消息列表作为历史对话（在添加新消息之前）
+    const currentHistory = [...messages];
+    
     // 清空输入框并添加用户消息
     setMessages(prev => [...prev, userMessage]);
     setNewMessage('');
@@ -1126,8 +1177,8 @@ export default function AIPracticePage() {
       // 生成消息分析 - 使用大模型进行实时分析
       setIsAnalyzing(true);
       
-      // 调用大模型分析消息
-      const aiAnalysis = await analyzeMessage(newMessage, selectedScenario);
+      // 调用大模型分析消息，传入历史对话
+      const aiAnalysis = await analyzeMessage(newMessage, selectedScenario, currentHistory);
       
       // 为用户消息生成分析数据
       const analysis: MessageAnalysis = {
@@ -1145,7 +1196,8 @@ export default function AIPracticePage() {
           empathy: aiAnalysis.empathy || Math.floor(Math.random() * 3) + 3
         }),
         optimalResponse: generateOptimalResponse(newMessage, selectedScenario),
-        feedback: aiAnalysis.feedback
+        feedback: aiAnalysis.feedback,
+        suggestedResponses: aiAnalysis.suggestedResponses
       };
       
       // 更新用户消息，添加分析数据
@@ -1161,8 +1213,11 @@ export default function AIPracticePage() {
         setIsAnalyzing(false);
       }
 
-      // 生成建议回复
-      if (isMountedRef.current) {
+      // 使用大模型返回的建议回复
+      if (isMountedRef.current && aiAnalysis.suggestedResponses) {
+        setSuggestedResponses(aiAnalysis.suggestedResponses);
+      } else {
+        // 如果大模型没有返回建议回复，则使用默认生成的
         setSuggestedResponses(generateSuggestedResponses(newMessage, selectedScenario));
       }
 
@@ -1259,6 +1314,7 @@ export default function AIPracticePage() {
         - strengths: 对话中的优点（2-3点）
         - weaknesses: 需要改进的地方（2-3点）
         - summary: 整体评价和建议（200字以内）
+        - suggestions: 建议的改进方向（3-4点）
       `;
 
       const response = await client.chat.completions.create({
@@ -1284,41 +1340,41 @@ export default function AIPracticePage() {
         emotionalManagement: Math.floor(Math.random() * 2) + 3,
         empathy: Math.floor(Math.random() * 2) + 3,
         communicationStrategy: Math.floor(Math.random() * 2) + 3,
-        strengths: ["对话保持了基本的连贯性", "用户积极参与互动"],
-        weaknesses: ["可以进一步提高共情能力", "沟通策略可以更加多样化"],
-        summary: "对话整体表现良好，但在共情和策略方面还有提升空间。建议在未来的沟通中，更加关注对方的需求和感受，采用更加灵活多变的沟通方式。"
+        strengths: [],
+        weaknesses: [],
+        summary: ""
       };
     }
   };
 
   // 结束对话，查看分析
   const endConversation = async () => {
-    // 保存练习记录到进度系统
-    savePracticeRecord();
+    let conversationAnalysis = null;
     
     // 如果有对话内容和选定的场景，分析整个对话
     if (messages.length > 0 && selectedScenario) {
       setIsAnalyzing(true);
-      const conversationAnalysis = await analyzeConversation(messages, selectedScenario);
+      conversationAnalysis = await analyzeConversation(messages, selectedScenario);
       setConversationAnalysis(conversationAnalysis);
       setIsAnalyzing(false);
     }
+    
+    // 保存练习记录到进度系统，传入大模型分析结果
+    savePracticeRecord(conversationAnalysis);
     
     setCurrentView('analysis');
   };
   
   // 保存练习记录到进度系统
-  const savePracticeRecord = () => {
+  const savePracticeRecord = (conversationAnalysis: any) => {
     if (!selectedScenario) return;
     
     // 计算练习时长（分钟）
     const duration = Math.round((Date.now() - conversationStartTime) / (1000 * 60));
     
-    // 获取改进建议
-    const improvementSuggestions: string[] = [];
-    if (overallScore < 3) improvementSuggestions.push('尝试提供更具体的信息和例子');
-    if (overallScore < 4) improvementSuggestions.push('关注对方的反馈，有针对性地回应');
-    if (overallScore < 5) improvementSuggestions.push('可以尝试使用更多的情感词汇，增强沟通效果');
+    // 使用大模型返回的结果作为改进建议和分数
+    const improvementSuggestions = conversationAnalysis?.weaknesses || [];
+    const score = conversationAnalysis?.overallScore ? Math.round(conversationAnalysis.overallScore * 20) : Math.round(overallScore * 20);
     
     // 创建练习记录
     const practiceRecord: PracticeRecord = {
@@ -1326,7 +1382,7 @@ export default function AIPracticePage() {
       date: new Date().toISOString(),
       scenario: selectedScenario.title,
       duration,
-      score: Math.round(overallScore * 20), // 转换为100分制
+      score: score, // 转换为100分制
       improvement: improvementSuggestions
     };
     
@@ -1795,7 +1851,7 @@ export default function AIPracticePage() {
 
               {/* 改进建议区域 */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">改进建议</h2>
+                <h2 className="text-2xl font-bold mb-4">总体改进建议</h2>
                 <div className={cn(
                   "p-6 rounded-xl",
                   theme === 'dark' ? 'bg-slate-800' : 'bg-white',
