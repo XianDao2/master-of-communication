@@ -1235,7 +1235,17 @@ Standard JSON, with fields exactly matching the above example. Ensure the return
       )}
     >
       <div className="container mx-auto px-4 py-8">
-        {!result ? (
+        {isSubmitting || isAnalyzing ? (
+          <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-6"></div>
+            <h1 className="text-2xl font-bold mb-4 text-blue-900 dark:text-blue-300">
+              正在生成评估结果...
+            </h1>
+            <p className="text-lg text-center text-gray-600 dark:text-gray-300 max-w-md">
+              我们正在使用AI分析你的沟通能力数据，请稍候。这个过程可能需要几分钟时间。
+            </p>
+          </div>
+        ) : !result ? (
           <div>
             <h1 className="text-3xl font-bold mb-6 text-blue-900 dark:text-blue-300">
               沟通能力评估
