@@ -73,11 +73,11 @@ interface Scenario {
 // 练习记录接口（与进度页面保持一致）
 interface PracticeRecord {
   id: string;
-  scenarioId: string;
-  scenarioName: string;
-  messages: Message[];
+  date: string;
+  scenario: string;
+  duration: number;
   score: number;
-  timestamp: Date;
+  improvement: string[];
 }
 
 // 学习统计接口（与进度页面保持一致）
