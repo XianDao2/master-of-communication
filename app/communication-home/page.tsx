@@ -28,7 +28,7 @@ const AnimatedSection: React.FC<{
 }> = ({ children, className }) => {
   const controls = useAnimation();
   const ref = React.useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, threshold: 0.1 });
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   useEffect(() => {
     if (isInView) {
