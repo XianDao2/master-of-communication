@@ -11,14 +11,7 @@ import { cn } from '@/lib/utils';
 // Animation variants for scroll reveal
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut"
-    }
-  }
+  visible: { opacity: 1, y: 0 }
 };
 
 // Section wrapper with scroll reveal animation
@@ -42,6 +35,7 @@ const AnimatedSection: React.FC<{
       initial="hidden"
       animate={controls}
       variants={fadeIn}
+      transition={{ duration: 0.6, ease: "easeOut" }}
       className={className}
     >
       {children}
