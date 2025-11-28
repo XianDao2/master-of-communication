@@ -21,6 +21,7 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@types/recharts": "^1.8.29",
     "autoprefixer": "10.4.20",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -36,6 +37,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.61.1",
+    "recharts": "^3.5.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
