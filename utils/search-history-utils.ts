@@ -5,7 +5,7 @@ export interface SearchHistoryRecord {
   id?: string;
   user_id: string;
   customer_id: string;
-  search_type: 'other';
+  search_type: 'other' | 'pronunciation_search';
   search_query: string;
   search_results: any;
   metadata?: Record<string, any>;
@@ -75,7 +75,7 @@ export async function recordSearchHistory(
 export async function getUserSearchHistory(
   limit: number = 20,
   offset: number = 0,
-  searchType?: 'other'
+  searchType?: 'other' | 'pronunciation_search'
 ): Promise<SearchHistoryRecord[]> {
   try {
     const supabase = createClient();
@@ -157,7 +157,7 @@ export async function deleteSearchHistory(historyId: string): Promise<boolean> {
  * @returns 清空是否成功
  */
 export async function clearUserSearchHistory(
-  searchType?: 'other'
+  searchType?: 'other' | 'pronunciation_search'
 ): Promise<boolean> {
   try {
     const supabase = createClient();

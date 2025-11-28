@@ -6,9 +6,16 @@ import { useRouter } from 'next/navigation';
 
 // 用户类型定义
 export interface UserProfile {
+  id?: string;
+  email?: string;
   name?: string;
   bio?: string;
   location?: string;
+  user_metadata?: {
+    name?: string;
+    gender?: string;
+    [key: string]: any;
+  };
 }
 
 export function useUser() {
@@ -147,15 +154,17 @@ export function useUser() {
       
       // 如果提供了名称，尝试创建用户资料
       if (name) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('users').insert({
-            id: user.id,
-            name,
-            email
-          }).catch(err => {
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        if (newUser) {
+          try {
+            await supabase.from('users').insert({
+              id: newUser.id,
+              name,
+              email
+            });
+          } catch (err) {
             console.warn('Failed to create user profile:', err);
-          });
+          }
         }
       }
     } catch (err) {

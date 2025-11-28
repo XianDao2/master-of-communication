@@ -620,10 +620,10 @@ const categories: Category[] = [
 ];
 
 // 获取所有分类
-const categoryList = [...new Set(articles.map(article => article.category))];
+const categoryList = Array.from(new Set(articles.map(article => article.category)));
 
 // 获取所有标签
-const allTags = [...new Set(articles.flatMap(article => article.tags))];
+const allTags = Array.from(new Set(articles.flatMap(article => article.tags)));
 
 // 文章卡片组件
 const ArticleCard: React.FC<{ article: Article; theme: string; onReadMore: (article: Article) => void }> = ({ article, theme, onReadMore }) => {

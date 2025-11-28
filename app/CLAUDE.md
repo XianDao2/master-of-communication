@@ -23,7 +23,6 @@ app模块是沟通大师项目的核心应用层，基于Next.js 15 App Router�
   - 主题切换支持 (next-themes)
   - 用户认证状态管理
   - 元数据配置 (SEO优化)
-  - 字体配置 (Geist字体)
 
 ### 首页 (`page.tsx`)
 - **文件路径**: `e:\Project\沟通大师\app\page.tsx`

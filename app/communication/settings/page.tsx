@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme, toggleTheme } from '@/hooks/use-theme';
-import { useUser, updateUserProfile } from '@/hooks/use-user';
+import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 
 // 设置选项卡类型
@@ -186,7 +186,7 @@ const TabButton: React.FC<{
 
 export default function SettingsPage() {
   const { theme } = useTheme();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, loading: isUserLoading, updateUserProfile } = useUser();
   
   // 当前活动选项卡
   const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -259,15 +259,12 @@ export default function SettingsPage() {
       // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 在实际应用中，这里应该调用updateUserProfile函数
-      if (updateUserProfile) {
-        await updateUserProfile({
-            name,
-            email,
-            bio,
-            location
-          });
-      }
+      // 调用updateUserProfile函数更新用户资料
+      await updateUserProfile({
+          name,
+          bio,
+          location
+        });
       
       // 显示成功消息
       alert('个人资料已更新');

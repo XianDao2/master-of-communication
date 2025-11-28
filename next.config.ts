@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   webpack: (config: any) => {
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/node_modules/**'],
+      ignored: ['**/node_modules/**', '**/ref-project/**'],
     };
     return config;
   },

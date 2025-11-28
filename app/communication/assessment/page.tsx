@@ -344,7 +344,7 @@ export default function AssessmentPage() {
       fullResult: {},
       analysisResult: {
         overallAnalysis: "",
-        personalizedAdvice: "",
+        personalizedSuggestions: "",
         communicationStyle: "",
         potentialChallenges: [],
         developmentPlan: {
@@ -365,9 +365,9 @@ export default function AssessmentPage() {
       // 构建用户选择的详细信息
       const userSelections = Object.entries(answers).map(
         ([questionId, selectedValue]) => {
-          // 将字符串类型的ID和值转换为数字类型，以匹配Question接口定义
+          // 将字符串类型的ID转换为数字类型，以匹配Question接口定义
           const questionIdNum = parseInt(questionId, 10);
-          const selectedValueNum = parseInt(selectedValue, 10);
+          const selectedValueNum = selectedValue;
 
           const question = questions.find((q) => q.id === questionIdNum);
           const selectedOption = question?.options.find(
