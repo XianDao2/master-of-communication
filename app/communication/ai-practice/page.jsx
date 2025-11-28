@@ -807,7 +807,7 @@ export default function AIPracticePage() {
   const [conversationStartTime, setConversationStartTime] = useState(Date.now());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestedResponses, setSuggestedResponses] = useState([]);
-  const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [conversationAnalysis, setConversationAnalysis] = useState(null);
   const messagesEndRef = useRef(null);
   const isMountedRef = useRef(true);
