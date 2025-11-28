@@ -26,9 +26,11 @@ export default function Header({ user }: HeaderProps) {
     { label: "首页", href: "/" },
     { label: "AI练习", href: "/communication/ai-practice" },
     { label: "评估", href: "/communication/assessment" },
-    { label: "知识", href: "/communication/knowledge" },
-    { label: "进度", href: "/communication/progress" },
-    { label: "设置", href: "/communication/settings" },
+    ...(user ? [
+      { label: "知识", href: "/communication/knowledge" },
+      { label: "进度", href: "/communication/progress" },
+      { label: "设置", href: "/communication/settings" },
+    ] : []),
     { label: "定价", href: "/pricing" },
     { label: "关于我们", href: "/product/about" },
   ];

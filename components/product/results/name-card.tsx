@@ -519,20 +519,7 @@ export default function NameCard({
               </Button>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-primary hover:text-primary/80 hover:bg-primary/10 h-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              // 编码名字数据并跳转到详细页面
-              const encodedData = encodeURIComponent(JSON.stringify(safeName));
-              router.push(`/name-detail?data=${encodedData}`);
-            }}
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Details
-          </Button>
+
         </div>
       </CardContent>
     </Card>

@@ -68,7 +68,8 @@ export function MobileNav({ items, user, isDashboard }: MobileNavProps) {
               评估
             </Link>
           )}
-          {!items.some(item => item.href === '/communication/knowledge') && (
+          {/* 知识、进度、设置只对登录用户显示 */}
+          {user && !items.some(item => item.href === '/communication/knowledge') && (
             <Link
               href="/communication/knowledge"
               className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
@@ -76,7 +77,7 @@ export function MobileNav({ items, user, isDashboard }: MobileNavProps) {
               知识
             </Link>
           )}
-          {!items.some(item => item.href === '/communication/progress') && (
+          {user && !items.some(item => item.href === '/communication/progress') && (
             <Link
               href="/communication/progress"
               className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"
@@ -84,7 +85,7 @@ export function MobileNav({ items, user, isDashboard }: MobileNavProps) {
               进度
             </Link>
           )}
-          {!items.some(item => item.href === '/communication/settings') && (
+          {user && !items.some(item => item.href === '/communication/settings') && (
             <Link
               href="/communication/settings"
               className="text-lg font-semibold text-muted-foreground transition-colors hover:text-primary ml-4"

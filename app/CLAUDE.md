@@ -53,7 +53,6 @@ app模块是沟通大师项目的核心应用层，基于Next.js 15 App Router�
 - **reset-password/page.tsx**: 密码重置页面
 
 ### 产品功能模块 (`product/`)
-- **random-generator/page.tsx**: 随机名字生成器
 - **about/page.tsx**: 产品介绍页面
 
 ### API路由 (`api/`)
@@ -145,11 +144,9 @@ A: 使用Next.js的静态生成(SSG)和服务器端渲染(SSR)特性，优化图
 - `dashboard/reset-password/page.tsx`
 
 ### 产品页面
-- `product/random-generator/page.tsx`
 - `product/about/page.tsx`
 
 ### API路由
-- `api/chinese-names/generate/route.ts`
 - `api/pronunciation/route.ts`
 - `api/creem/create-checkout/route.ts`
 - `api/creem/customer-portal/route.ts`
