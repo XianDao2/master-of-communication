@@ -271,7 +271,8 @@ const SearchHistoryDetail = () => {
           </div>
         </div>
       </div>
-    );
+    </div>
+  );
 };
 
 export default SearchHistoryDetail;
