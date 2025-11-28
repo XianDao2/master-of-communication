@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useParallax, useReverseParallax } from "../hooks/use-parallax";
+import { useTheme } from "../hooks/use-theme";
 
 export default function Home() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setIsClient(true);
@@ -23,25 +25,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section - 添加视差效果 */}
-      <section className="relative py-24 lg:py-36 overflow-hidden gradient-overlay">
-        {/* 背景视差元素 */}
-        <motion.div
-          className="absolute inset-0 bg-grid-pattern opacity-10"
-          style={{ transform: `translateY(${parallaxOffset}px)` }}
-        />
-        
-        {/* 视差金色光晕 */}
-        <motion.div
-          className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
-          style={{ transform: `translateY(${parallaxOffset / 2}px)` }}
-        />
-        
-        <motion.div
-          className="absolute bottom-1/4 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
-          style={{ transform: `translateY(${reverseParallaxOffset}px)` }}
-        />
-        
+      {/* Hero Section */}
+      <section className={`relative py-24 lg:py-36 overflow-hidden ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
+        {/* Background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-300 opacity-20 blur-3xl"></div>
+          <div className="absolute top-1/4 -left-10 w-60 h-60 rounded-full bg-purple-300 opacity-20 blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-40 h-40 rounded-full bg-indigo-300 opacity-20 blur-3xl"></div>
+        </div>
+
         <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center space-y-8 text-center">
             <motion.div
@@ -51,16 +43,15 @@ export default function Home() {
               className="space-y-8"
             >
               <div className="inline-flex items-center rounded-full px-4 py-2 text-sm font-medium bg-primary/15 text-primary border border-primary/30 mb-4">
-                <span className="mr-2">💎</span>
+                <span className="mr-2">💬</span>
                 企业级沟通能力提升平台
               </div>
 
               <motion.h1 
-                className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl leading-tight"
-                style={{ transform: `translateY(${reverseParallaxOffset}px)` }}
+                className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-tight"
               >
                 提升你的沟通技巧<br />
-                <span className="text-primary font-playfair">自信应对各种场景</span>
+                <span className="text-primary">自信应对各种场景</span>
               </motion.h1>
 
               <p className="mt-8 text-xl text-muted-foreground md:text-2xl max-w-3xl mx-auto leading-relaxed">
@@ -80,39 +71,36 @@ export default function Home() {
                       assessmentSection.scrollIntoView({ behavior: 'smooth' });
                     }
                   }}
-                  className="inline-flex items-center justify-center h-16 px-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-300 shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:scale-105"
+                  className="inline-flex items-center justify-center h-16 px-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
                 >
                   开始沟通评估
                 </button>
                 <button
                   onClick={() => router.push('/communication/knowledge')}
-                  className="inline-flex items-center justify-center h-16 px-12 text-lg font-semibold bg-background/80 backdrop-blur-sm text-foreground border border-primary/30 hover:bg-primary/10 rounded-lg transition-all duration-300 shadow-lg hover:shadow-primary/20 hover:scale-105"
+                  className="inline-flex items-center justify-center h-16 px-12 text-lg font-semibold bg-background/80 backdrop-blur-sm text-foreground border border-primary/30 hover:bg-primary/10 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
                 >
                   浏览知识库
                 </button>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="flex flex-wrap items-center justify-center gap-8 pt-10 text-sm text-muted-foreground"
+              {/* Stats */}
+              <motion.div 
+                className="grid grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
               >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-primary rounded-full"></span>
-                  个性化AI评估系统
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">10K+</div>
+                  <div className="text-muted-foreground">活跃用户</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-primary rounded-full"></span>
-                  定制化学习路径
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">98%</div>
+                  <div className="text-muted-foreground">用户满意度</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-primary rounded-full"></span>
-                  企业级场景模拟
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-primary rounded-full"></span>
-                  实时反馈与优化
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">4.9/5</div>
+                  <div className="text-muted-foreground">平均评分</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -332,7 +320,7 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-playfair">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 三步构建企业级沟通能力
               </h2>
             </motion.div>
